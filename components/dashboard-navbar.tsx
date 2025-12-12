@@ -3,15 +3,35 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { api } from "@/lib/api"
 import { UserProfileDialog } from "@/components/user-profile-dialog"
+import { UserChangePasswordDialog } from "@/components/user-changepassword-dialog"
 
 export default function DashboardNavbar() {
   const router = useRouter()
   const { user, token, refreshToken, logout } = useAuth()
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  // Đóng dropdown khi click bên ngoài
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false)
+      }
+    }
+
+    if (isDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [isDropdownOpen])
 
   const handleLogout = async () => {
     try {
@@ -41,17 +61,13 @@ export default function DashboardNavbar() {
             <Link href="/dashboard" className="text-foreground hover:text-primary transition font-medium">
               Trang Chủ
             </Link>
-            <Link href="/dashboard/edited" className="text-foreground hover:text-primary transition font-medium">
-              Gia Phả Chỉnh Sửa
-            </Link>
-
+            
             {/* My Account Dropdown */}
-            <div className="relative">
+            <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-secondary transition"
               >
-                <span className="text-xl">👤</span>
                 <span className="text-foreground">Tài Khoản</span>
               </button>
 
@@ -69,6 +85,15 @@ export default function DashboardNavbar() {
                       Thông Tin Tài Khoản
                     </button>
                     <button
+                      onClick={() => {
+                        setIsDropdownOpen(false)
+                        setIsChangePasswordOpen(true)
+                      }}
+                      className="w-full text-left px-4 py-2 hover:bg-secondary rounded text-foreground transition"
+                    >
+                      Đổi Mật Khẩu
+                    </button>
+                    <button
                       onClick={handleLogout}
                       className="w-full text-left px-4 py-2 hover:bg-destructive/10 text-destructive rounded transition"
                     >
@@ -82,6 +107,7 @@ export default function DashboardNavbar() {
         </div>
       </div>
       <UserProfileDialog open={isProfileOpen} onOpenChange={setIsProfileOpen} />
+      <UserChangePasswordDialog open={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen} />
     </nav>
   )
 }

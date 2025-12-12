@@ -66,7 +66,7 @@ export default function PublishedCharts() {
       <Card className="p-12 text-center border border-border">
         <p className="text-muted-foreground mb-4">Chưa có gia phả nào được chia sẻ công khai</p>
         <Link href="/register">
-          <Button>Tạo Gia Phả Đầu Tiên</Button>
+          <Button>Tạo Gia Phả Đầu Tiên Của Bạn</Button>
         </Link>
       </Card>
     )
@@ -80,7 +80,7 @@ export default function PublishedCharts() {
           <p className="text-muted-foreground text-sm mb-4 line-clamp-3">{chart.description || "Không có mô tả"}</p>
           <p className="text-xs text-muted-foreground mb-4">Chia sẻ bởi: {chart.ownerName || "Ẩn danh"}</p>
           <Button variant="outline" className="w-full bg-transparent">
-            Xem Chi Tiết
+            Xem Sơ Đồ Phả Hệ
           </Button>
         </Card>
       ))}

@@ -113,6 +113,38 @@ export const api = {
     }
   },
 
+  async logout(token: string, refreshToken: string) {
+    try {
+      const response = await apiClient.post(
+        "/api/v1/auth/logout",
+        { refresh_token: refreshToken },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      )
+      return response.data
+    } catch (error) {
+      console.error("Logout error:", error)
+      throw error
+    }
+  },
+
+  async changePassword(token: string, oldPassword: string, newPassword: string) { 
+    try {
+      const response = await apiClient.post(
+        "/api/v1/auth/password/change",
+        { old_password: oldPassword, new_password: newPassword },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      )
+      return response.data
+    } catch (error) {
+      console.error("Password change error:", error)
+      throw error
+    }
+  },
+
   async getMe(token: string) {
     try {
       const response = await apiClient.get("/api/v1/auth/me", {
@@ -195,9 +227,29 @@ export const api = {
   },
 
   async getEditedCharts(token: string) {
-    const response = await apiClient.get("/api/v1/charts/edited", {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    return response.data
+    try {
+      const response = await apiClient.get("/api/v1/charts/edited", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      return response.data
+    } catch (error: any) {
+      // Nếu lỗi 404 nghĩa là chưa có chart nào được chia sẻ
+      if (error.response && error.response.status === 404) {
+        return []
+      }
+      throw error
+    }
+  },
+
+  async getEditorName(token: string, userId: string) {
+    try {
+      const response = await apiClient.get(`/api/v1/charts/editor-name?userId=${userId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      return response.data
+    } catch (error) {
+      console.error("Get editor name error:", error)
+      throw error
+    }
   }
 }

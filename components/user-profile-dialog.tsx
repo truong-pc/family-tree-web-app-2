@@ -23,7 +23,7 @@ export function UserProfileDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
-  const { token } = useAuth()
+  const { token, updateUser } = useAuth()
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
@@ -69,6 +69,10 @@ export function UserProfileDialog({
         full_name: formData.full_name,
         phone: formData.phone,
         dob: formData.dob,
+      })
+      // Cập nhật user trong context và localStorage
+      updateUser({
+        full_name: formData.full_name,
       })
       toast({
         title: "Thành công",

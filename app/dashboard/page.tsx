@@ -6,6 +6,7 @@ import { useEffect, useState } from "react"
 import DashboardLayout from "@/components/dashboard-layout"
 import UserChartSection from "@/components/user-chart-section"
 import PublishedCharts from "@/components/published-charts-section"
+import EditedChartsSection from "@/components/edited-charts-section"
 import { Separator } from "@/components/ui/separator"
 
 export default function DashboardPage() {
@@ -51,6 +52,15 @@ export default function DashboardPage() {
             🌳 Gia Phả Của Tôi
           </h2>
           <UserChartSection />
+        </section>
+
+        <Separator />
+        <section>
+          <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
+            🛠 Gia phả mà bạn có quyền chỉnh sửa
+          </h2>
+          <p className="text-muted-foreground mb-6">Danh sách các gia phả bạn đã tạo hoặc được chia sẻ để chỉnh sửa.</p>
+          <EditedChartsSection />
         </section>
 
         <Separator />

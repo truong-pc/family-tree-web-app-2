@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { api } from "@/lib/api"
+import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -23,9 +24,17 @@ interface Chart {
   createdAt: string
 }
 
+interface EditorInfo {
+  _id: string
+  full_name: string
+  email: string
+}
+
 export default function UserChartSection() {
   const [chart, setChart] = useState<Chart | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [editorsInfo, setEditorsInfo] = useState<EditorInfo[]>([])
+  const [isLoadingEditors, setIsLoadingEditors] = useState(false)
   const { toast } = useToast()
 
   // States for forms
@@ -35,12 +44,37 @@ export default function UserChartSection() {
   
   const [formData, setFormData] = useState({ name: "", description: "", published: false })
   const [editorEmail, setEditorEmail] = useState("")
+  const [editorError, setEditorError] = useState("")
+  const { token } = useAuth()
+
+  const fetchEditorsInfo = async (editorIds: string[]) => {
+    if (!token || editorIds.length === 0) {
+      setEditorsInfo([])
+      return
+    }
+    
+    setIsLoadingEditors(true)
+    try {
+      const promises = editorIds.map(userId => api.getEditorName(token!, userId))
+      const results = await Promise.all(promises)
+      setEditorsInfo(results)
+    } catch (error) {
+      console.error("Failed to fetch editors info", error)
+      setEditorsInfo([])
+    } finally {
+      setIsLoadingEditors(false)
+    }
+  }
 
   const fetchMyChart = async () => {
+    if (!token) return
     setIsLoading(true)
     try {
-      const data = await api.getMyChart()
+      const data = await api.getMyChart(token!)
       setChart(data)
+      if (data && data.editors) {
+        await fetchEditorsInfo(data.editors)
+      }
     } catch (error) {
       console.error("Failed to fetch my chart", error)
     } finally {
@@ -53,8 +87,12 @@ export default function UserChartSection() {
   }, [])
 
   const handleCreate = async () => {
+    if (!token) {
+      toast({ title: "Lỗi", description: "Phiên đăng nhập hết hạn.", variant: "destructive" })
+      return
+    }
     try {
-      await api.createChart({ name: formData.name, description: formData.description })
+      await api.createChart(token!, { name: formData.name, description: formData.description })
       toast({ title: "Thành công", description: "Đã tạo gia phả mới." })
       setIsCreateOpen(false)
       fetchMyChart()
@@ -64,9 +102,9 @@ export default function UserChartSection() {
   }
 
   const handleUpdate = async () => {
-    if (!chart) return
+    if (!chart || !token) return
     try {
-      await api.updateChart(chart._id, { 
+      await api.updateChart(token!, chart._id, { 
         name: formData.name, 
         description: formData.description,
         published: formData.published 
@@ -80,9 +118,9 @@ export default function UserChartSection() {
   }
 
   const handleDelete = async () => {
-    if (!chart || !confirm("Bạn có chắc chắn muốn xóa gia phả này? Hành động này không thể hoàn tác.")) return
+    if (!chart || !token || !confirm("Bạn có chắc chắn muốn xóa gia phả này? Hành động này không thể hoàn tác.")) return
     try {
-      await api.deleteChart(chart._id)
+      await api.deleteChart(token!, chart._id)
       toast({ title: "Thành công", description: "Đã xóa gia phả." })
       setChart(null)
     } catch (error) {
@@ -91,21 +129,29 @@ export default function UserChartSection() {
   }
 
   const handleAddEditor = async () => {
-    if (!chart || !editorEmail) return
+    if (!chart || !token || !editorEmail) return
+    setEditorError("")
     try {
-      await api.addEditor(chart._id, editorEmail)
+      await api.addEditor(token!, chart._id, editorEmail)
       toast({ title: "Thành công", description: `Đã thêm ${editorEmail} làm người chỉnh sửa.` })
       setEditorEmail("")
       fetchMyChart()
-    } catch (error) {
-      toast({ title: "Lỗi", description: "Không thể thêm người dùng này.", variant: "destructive" })
+    } catch (error: any) {
+      const status = error?.response?.status
+      let errorMessage = "Không thể thêm người dùng này."
+      
+      if (status === 404 || status === 422) {
+        errorMessage = "Email không tồn tại hoặc không hợp lệ. Vui lòng kiểm tra lại."
+      }
+      
+      setEditorError(errorMessage)
     }
   }
 
   const handleRemoveEditor = async (email: string) => {
-    if (!chart) return
+    if (!chart || !token) return
     try {
-      await api.removeEditor(chart._id, email)
+      await api.removeEditor(token!, chart._id, email)
       toast({ title: "Thành công", description: "Đã xóa quyền chỉnh sửa." })
       fetchMyChart()
     } catch (error) {
@@ -157,7 +203,7 @@ export default function UserChartSection() {
     )
   }
 
-  // --- VIEW: HAS CHART (MANAGE MODE) ---
+  // --- VIEW: CHART MODAL (MANAGE MODE) ---
   return (
     <Card className="border-primary/20 shadow-md">
       <CardHeader>
@@ -234,17 +280,37 @@ export default function UserChartSection() {
                 <DialogDescription>Thêm email của người dùng khác để họ cùng quản lý cây gia phả này.</DialogDescription>
               </DialogHeader>
               
-              <div className="flex gap-2 mb-4">
-                <Input placeholder="Email người dùng..." value={editorEmail} onChange={(e) => setEditorEmail(e.target.value)} />
-                <Button onClick={handleAddEditor}>Thêm</Button>
+              <div className="space-y-2 mb-4">
+                <div className="flex gap-2">
+                  <Input 
+                    placeholder="Email người dùng..." 
+                    value={editorEmail} 
+                    onChange={(e) => {
+                      setEditorEmail(e.target.value)
+                      setEditorError("")
+                    }} 
+                    className={editorError ? "border-red-500" : ""}
+                  />
+                  <Button onClick={handleAddEditor}>Thêm</Button>
+                </div>
+                {editorError && (
+                  <p className="text-sm text-red-500 font-medium">{editorError}</p>
+                )}
               </div>
 
               <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                {chart.editors && chart.editors.length > 0 ? (
-                  chart.editors.map((email, idx) => (
-                    <div key={idx} className="flex justify-between items-center p-2 bg-secondary rounded-md">
-                      <span className="text-sm">{email}</span>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleRemoveEditor(email)}>
+                {isLoadingEditors ? (
+                  <div className="flex items-center justify-center py-4">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                  </div>
+                ) : editorsInfo.length > 0 ? (
+                  editorsInfo.map((editor) => (
+                    <div key={editor._id} className="flex justify-between items-center p-2 bg-secondary rounded-md">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium">{editor.full_name}</span>
+                        <span className="text-xs text-muted-foreground">{editor.email}</span>
+                      </div>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleRemoveEditor(editor._id)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>

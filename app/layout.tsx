@@ -11,7 +11,6 @@ const _geistMono = Geist_Mono({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "Quản Lý Gia Phả - Family Tree Management",
   description: "Hệ thống quản lý cây gia phả dòng họ - Manage your family tree efficiently",
-  generator: "v0.app",
   icons: {
     icon: [
       {
