@@ -107,8 +107,11 @@ export const api = {
         password,
       })
       return response.data
-    } catch (error) {
-      console.error("Login error:", error)
+    } catch (error: any) {
+      if (error.response && error.response.status === 401) {
+        return Promise.reject(new Error("Invalid email or password"))
+      }
+      console.error("Login error :", error)
       throw error
     }
   },
