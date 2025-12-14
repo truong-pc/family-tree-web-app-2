@@ -290,10 +290,10 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
       <div className="flex">
         {/* Main Content */}
         <div className="flex-1">
-          <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
+          <div className="max-w-7xl mx-auto px-1 sm:px-4 lg:px-8 py-2 sm:py-8">
             {/* Family Tree Visualization */}
-            <Card className="mb-4 sm:mb-8 gap-2">
-              <CardHeader className={`pb-1 sm:pb-3 ${readOnly ? 'space-y-3' : ''}`}>
+            <Card className="mb-2 sm:mb-8 gap-2">
+              <CardHeader className={`pb-1 sm:pb-3 px-2 sm:px-6 ${readOnly ? 'space-y-3' : ''}`}>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg sm:text-xl">Family Tree Visualization</CardTitle>
                   <Button
@@ -356,7 +356,7 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
                   </div>
                 )}
               </CardHeader>
-              <CardContent className="pt-1 px-2 pb-2 sm:pt-2 sm:px-6 sm:pb-6">
+              <CardContent className="pt-1 px-1 pb-1 sm:pt-2 sm:px-6 sm:pb-6">
                 <FamilyTreeChart
                   data={familyTreeData}
                   onNodeClick={handleNodeClick}
@@ -372,7 +372,7 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
 
             {/* People List */}
             <Card>
-              <CardHeader className="pb-3 sm:pb-6">
+              <CardHeader className="pb-2 sm:pb-6 px-2 sm:px-6">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg sm:text-xl">Family Members ({people.length})</CardTitle>
                   <Button
@@ -387,7 +387,7 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
                 </div>
               </CardHeader>
               <CardContent className="p-2 sm:p-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-3">
                   {[...people]
                     .sort((a, b) => sortByLevel ? a.level - b.level : 0)
                     .map((person) => (

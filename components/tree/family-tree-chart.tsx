@@ -36,7 +36,7 @@ export default function FamilyTreeChart({ data, onNodeClick, focusedPerson, getP
   const svgRef = useRef<SVGSVGElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const zoomRef = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null)
-  const [dimensions, setDimensions] = useState({ width: 800, height: 600 })
+  const [dimensions, setDimensions] = useState({ width: 800, height:600 })
   const isInitialRender = useRef(true)
 
   // Expose reset zoom function to parent
@@ -59,10 +59,10 @@ export default function FamilyTreeChart({ data, onNodeClick, focusedPerson, getP
     const updateDimensions = () => {
       if (containerRef.current) {
         const containerWidth = containerRef.current.offsetWidth
-        const containerHeight = Math.max(600, window.innerHeight * 0.6)
+        const containerHeight = Math.max(500, window.innerHeight * 0.6)
 
         setDimensions({
-          width: Math.max(600, containerWidth - 40),
+          width: Math.max(500, containerWidth - 40),
           height: containerHeight,
         })
       }
@@ -394,9 +394,9 @@ export default function FamilyTreeChart({ data, onNodeClick, focusedPerson, getP
   }, [])
 
   return (
-    <div ref={containerRef} className="w-full overflow-auto">
-      <svg ref={svgRef} className="border rounded-lg bg-white"></svg>
-      <div className="mt-2 text-sm text-gray-600 flex items-center justify-center space-x-4 flex-wrap">
+    <div ref={containerRef} className="w-full overflow-hidden">
+      <svg ref={svgRef} className="border rounded-lg bg-white w-full"></svg>
+      <div className="mt-2 text-xs sm:text-sm text-gray-600 flex items-center justify-center space-x-2 sm:space-x-4 flex-wrap">
         <div className="flex items-center space-x-1">
           <div className="w-4 h-4 rounded" style={{ backgroundColor: "#DBEAFE" }}></div>
           <span>Male</span>
