@@ -254,5 +254,136 @@ export const api = {
       console.error("Get editor name error:", error)
       throw error
     }
-  }
+  },
+
+
+  async getPublishedTree(chartId: string) {
+    try {
+      const response = await apiClient.get(`/api/v1/charts/${chartId}/tree/published` )
+      return response.data
+    } catch (error) {
+      console.error("Get published tree error:", error)
+      throw error
+    }
+  },
+
+  // --- Chart Tree & Person APIs ---
+
+  async getChartTree(token: string, chartId: string) {
+    try {
+      const response = await apiClient.get(`/api/v1/charts/${chartId}/tree`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      return response.data
+    } catch (error) {
+      console.error("Get chart tree error:", error)
+      throw error
+    }
+  },
+
+  async getChartPersons(token: string, chartId: string, searchQuery?: string) {
+    try {
+      const url = searchQuery 
+        ? `/api/v1/charts/${chartId}/persons?q=${encodeURIComponent(searchQuery)}`
+        : `/api/v1/charts/${chartId}/persons`
+      const response = await apiClient.get(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      return response.data
+    } catch (error) {
+      console.error("Get chart persons error:", error)
+      throw error
+    }
+  },
+
+  async createPerson(
+    token: string, 
+    chartId: string, 
+    data: { 
+      name: string; 
+      gender: "M" | "F" | "O"; 
+      level: number; 
+      dob?: string | null; 
+      dod?: string | null; 
+      description?: string | null; 
+      parentIds?: number[] | null 
+    }
+  ) {
+    try {
+      const response = await apiClient.post(`/api/v1/charts/${chartId}/persons`, data, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      return response.data
+    } catch (error) {
+      console.error("Create person error:", error)
+      throw error
+    }
+  },
+
+  async updatePerson(
+    token: string,
+    chartId: string,
+    personId: number,
+    data: {
+      name?: string;
+      gender?: "M" | "F" | "O";
+      level?: number;
+      dob?: string | null;
+      dod?: string | null;
+      description?: string | null;
+    }
+  ) {
+    try {
+      const response = await apiClient.patch(`/api/v1/charts/${chartId}/persons/${personId}`, data, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      return response.data
+    } catch (error) {
+      console.error("Update person error:", error)
+      throw error
+    }
+  },
+
+  async deletePerson(token: string, chartId: string, personId: number) {
+    try {
+      const response = await apiClient.delete(`/api/v1/charts/${chartId}/persons/${personId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      return response.data
+    } catch (error) {
+      console.error("Delete person error:", error)
+      throw error
+    }
+  },
+
+  async createParentChildRelationship(token: string, chartId: string, parentId: number, childId: number) {
+    try {
+      const response = await apiClient.post(
+        `/api/v1/charts/${chartId}/relationships/parent-of`,
+        { parentId, childId },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      )
+      return response.data
+    } catch (error: any) {
+      console.error("Create relationship error:", error)
+      throw error
+    }
+  },
+
+  async deleteParentChildRelationship(token: string, chartId: string, parentId: number, childId: number) {
+    try {
+      const response = await apiClient.delete(`/api/v1/charts/${chartId}/relationships/parent-of`, {
+        data: { parentId, childId },
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      return response.data
+    } catch (error) {
+      console.error("Delete relationship error:", error)
+      throw error
+    }
+  },
+
+
 }

@@ -47,17 +47,17 @@ export default function DashboardNavbar() {
   }
 
   return (
-    <nav className="border-b border-border bg-card sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+    <nav className="border-b border-border bg-card ">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
         <div className="flex justify-between items-center">
           {/* Logo and Brand */}
           <Link href="/dashboard" className="flex items-center gap-2 hover:opacity-80 transition">
             <img src="/icon.png" alt="Logo" className="w-10 h-10 object-contain" />
-            <span className="font-bold text-lg text-foreground">Gia Phả</span>
+            <span className="font-bold text-2xl text-primary">Gia Phả</span>
           </Link>
 
           {/* Navigation Links */}
-          <div className="flex items-center gap-8">
+          <div className="flex items-center">
             <Link href="/dashboard" className="text-foreground hover:text-primary transition font-medium">
               Trang Chủ
             </Link>

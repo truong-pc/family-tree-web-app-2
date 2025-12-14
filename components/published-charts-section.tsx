@@ -79,9 +79,11 @@ export default function PublishedCharts() {
           <h3 className="text-lg font-semibold text-foreground mb-2">{chart.name || "Không có tên"}</h3>
           <p className="text-muted-foreground text-sm mb-4 line-clamp-3">{chart.description || "Không có mô tả"}</p>
           <p className="text-xs text-muted-foreground mb-4">Chia sẻ bởi: {chart.ownerName || "Ẩn danh"}</p>
-          <Button variant="outline" className="w-full bg-transparent">
-            Xem Sơ Đồ Phả Hệ
-          </Button>
+          <Link href={`/published-tree/${chart._id}`}>
+            <Button variant="outline" className="w-full bg-transparent">
+              Xem Sơ Đồ Phả Hệ
+            </Button>
+          </Link>
         </Card>
       ))}
     </div>
