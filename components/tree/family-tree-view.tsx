@@ -10,6 +10,7 @@ import FamilyTreeChart from "./family-tree-chart"
 import PersonSidebar from "./person-sidebar"
 import AddPersonModal from "./add-person-modal"
 import AddRelationshipModal from "./add-relationship-modal"
+import DelRelationshipModal from "./del-relationship-modal"
 
 export interface Person {
   personId: number
@@ -42,6 +43,7 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [showAddPersonModal, setShowAddPersonModal] = useState(false)
   const [showAddRelationshipModal, setShowAddRelationshipModal] = useState(false)
+  const [showDelRelationshipModal, setShowDelRelationshipModal] = useState(false)
   const [focusedPerson, setFocusedPerson] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -264,6 +266,14 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
                   <span className="hidden sm:inline">Add Relationship</span>
                   <span className="sm:hidden">Relation</span>
                 </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => setShowDelRelationshipModal(true)}
+                  className="flex-1 sm:flex-none"
+                >
+                  <span className="hidden sm:inline">Delete Relationship</span>
+                  <span className="sm:hidden">Del Relation</span>
+                </Button>
               </div>
             </div>
           </div>
@@ -475,6 +485,14 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
           <AddRelationshipModal
             isOpen={showAddRelationshipModal}
             onClose={() => setShowAddRelationshipModal(false)}
+            onSuccess={fetchData}
+            people={people}
+            chartId={chartId}
+          />
+
+          <DelRelationshipModal
+            isOpen={showDelRelationshipModal}
+            onClose={() => setShowDelRelationshipModal(false)}
             onSuccess={fetchData}
             people={people}
             chartId={chartId}
