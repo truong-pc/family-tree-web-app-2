@@ -108,9 +108,14 @@ export default function FamilyTreeChart({ data, onNodeClick, focusedPerson, getP
 
     // Node dimensions - responsive based on screen size
     const nodeWidth = width < 1024 ? 120 : 120
-    const nodeHeight = width < 1024 ? 40 : 50
+    const nodeHeight = width < 1024 ? 70 : 80
+    const avatarSize = width < 1024 ? 32 : 40
     const minNodeSpacing = width < 768 ? 15 : 20
-    const levelHeight = width < 768 ? 90 : 120
+    const levelHeight = width < 768 ? 110 : 140
+
+    // Avatar positioning
+    const avatarX = (nodeWidth - avatarSize) / 2
+    const avatarY = width < 768 ? 8 : 10
 
     // Create hierarchical structure
     const nodeMap = new Map()
@@ -255,40 +260,85 @@ export default function FamilyTreeChart({ data, onNodeClick, focusedPerson, getP
         const sourceX = d.source.x
         const sourceY = d.source.y + nodeHeight / 2
         const targetX = d.target.x
-        const targetY = d.target.y - nodeHeight / 2 - 10
+        const targetY = d.target.y - nodeHeight / 2 
 
         const midY = sourceY + (targetY - sourceY) / 2
 
         return `M${sourceX},${sourceY} L${sourceX},${midY} L${targetX},${midY} L${targetX},${targetY}`
       })
 
-    // Create rectangular nodes
-    const node = g
+    // Add clip path for circular avatars
+    allNodes.forEach((node: TreeNode, index: number) => {
+      defs
+        .append("clipPath")
+        .attr("id", `avatar-clip-${index}`)
+        .append("circle")
+        .attr("cx", avatarX + avatarSize / 2)
+        .attr("cy", avatarY + avatarSize / 2)
+        .attr("r", avatarSize / 2)
+    })
+
+    // Create node groups for better organization
+    const nodeGroups = g
       .append("g")
-      .selectAll("rect")
+      .selectAll("g")
       .data(allNodes)
       .enter()
+      .append("g")
+      .attr("transform", (d: TreeNode) => `translate(${d.x - nodeWidth / 2}, ${d.y - nodeHeight / 2})`)
+      .style("cursor", "pointer")
+
+    // Add rectangular backgrounds
+    nodeGroups
       .append("rect")
       .attr("width", nodeWidth)
       .attr("height", nodeHeight)
-      .attr("x", (d: TreeNode) => d.x - nodeWidth / 2)
-      .attr("y", (d: TreeNode) => d.y - nodeHeight / 2)
-      .attr("rx", 8)
-      .attr("ry", 8)
+      .attr("rx", 12)
+      .attr("ry", 12)
       .attr("fill", (d: TreeNode) => getPersonColor(d.data.id))
       .attr("stroke", "#fff")
       .attr("stroke-width", 2)
-      .style("cursor", "pointer")
+      // .attr("filter", "drop-shadow(0px 2px 4px rgba(0,0,0,0.1))") // Optional shadow
 
-    // Add labels with responsive font size
+    // Add avatar images
+    nodeGroups.each(function(d: TreeNode, index: number) {
+      const group = d3.select(this)
+      const photoUrl = d.data.photoUrl || "/placeholder-user.jpg"
+      
+      // Add circular border for avatar
+      group
+        .append("circle")
+        .attr("cx", nodeWidth / 2)
+        .attr("cy", avatarY + avatarSize / 2)
+        .attr("r", avatarSize / 2 + 2)
+        .attr("fill", "#fff")
+        .attr("stroke", "#e5e7eb")
+        .attr("stroke-width", 2)
+
+      // Add avatar image with clip path
+      group
+        .append("image")
+        .attr("x", avatarX)
+        .attr("y", avatarY)
+        .attr("width", avatarSize)
+        .attr("height", avatarSize)
+        .attr("href", photoUrl)
+        .attr("clip-path", `url(#avatar-clip-${index})`)
+        .attr("preserveAspectRatio", "xMidYMid slice")
+        .on("error", function() {
+          // Fallback to placeholder if image fails to load
+          d3.select(this).attr("href", "/placeholder-user.jpg")
+        })
+    })
+
+    // Add labels with responsive font size - positioned below avatar
     const fontSize = width < 768 ? "10px" : "12px"
-    const maxNameLength = width < 768 ? 15 : 15
+    const maxNameLength = width < 768 ? 12 : 14
+    
+    // Position text relative to avatar for consistent spacing
+    const textY = avatarY + avatarSize + (width < 768 ? 15 : 20)
 
-    const labels = g
-      .append("g")
-      .selectAll("text")
-      .data(allNodes)
-      .enter()
+    nodeGroups
       .append("text")
       .text((d: TreeNode) => {
         const name = d.data.id || d.data.name || "Unknown"
@@ -296,22 +346,28 @@ export default function FamilyTreeChart({ data, onNodeClick, focusedPerson, getP
       })
       .attr("font-size", fontSize)
       .attr("text-anchor", "middle")
-      .attr("dy", ".35em")
+      .attr("x", nodeWidth / 2)
+      .attr("y", textY)
       .style("pointer-events", "none")
-      .style("font-weight", "bold")
-      .attr("x", (d: TreeNode) => d.x)
-      .attr("y", (d: TreeNode) => d.y)
+      .style("font-weight", "600")
+      .attr("fill", "#1f2937") // Text color
 
     // Handle node clicks
-    node.on("click", (event, d: TreeNode) => {
+    nodeGroups.on("click", (event, d: TreeNode) => {
       onNodeClick(d.data.id)
     })
 
     // Highlight focused person
     if (focusedPerson) {
-      node
-        .attr("stroke", (d: TreeNode) => (d.data.id === focusedPerson ? "#ff6b6b" : "#fff"))
-        .attr("stroke-width", (d: TreeNode) => (d.data.id === focusedPerson ? 4 : 2))
+      nodeGroups.select("rect")
+        .attr("stroke", function(this: any) {
+          const d = d3.select(this.parentNode).datum() as TreeNode
+          return d.data.id === focusedPerson ? "#ff6b6b" : "#fff"
+        })
+        .attr("stroke-width", function(this: any) {
+          const d = d3.select(this.parentNode).datum() as TreeNode
+          return d.data.id === focusedPerson ? 4 : 2
+        })
     }
 
     // Store nodes for later access
@@ -363,9 +419,15 @@ export default function FamilyTreeChart({ data, onNodeClick, focusedPerson, getP
 
     // Highlight focused person and zoom to them if specified
     if (focusedPerson) {
-      node
-        .attr("stroke", (d: TreeNode) => (d.data.id === focusedPerson ? "#ff6b6b" : "#fff"))
-        .attr("stroke-width", (d: TreeNode) => (d.data.id === focusedPerson ? 4 : 2))
+      nodeGroups.select("rect")
+        .attr("stroke", function(this: any) {
+          const d = d3.select(this.parentNode).datum() as TreeNode
+          return d.data.id === focusedPerson ? "#ff6b6b" : "#fff"
+        })
+        .attr("stroke-width", function(this: any) {
+          const d = d3.select(this.parentNode).datum() as TreeNode
+          return d.data.id === focusedPerson ? 4 : 2
+        })
 
       // Zoom to focused person
       const focusedNode = allNodesWithPositions.find((n: TreeNode) => n.data.id === focusedPerson)

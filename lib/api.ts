@@ -306,7 +306,8 @@ export const api = {
       dob?: string | null; 
       dod?: string | null; 
       description?: string | null; 
-      parentIds?: number[] | null 
+      parentIds?: number[] | null;
+      photoUrl?: string | null;
     }
   ) {
     try {
@@ -331,6 +332,7 @@ export const api = {
       dob?: string | null;
       dod?: string | null;
       description?: string | null;
+      photoUrl?: string | null;
     }
   ) {
     try {

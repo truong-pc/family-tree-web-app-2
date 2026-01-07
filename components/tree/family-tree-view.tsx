@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { api } from "@/lib/api"
+import Image from "next/image"
 import FamilyTreeChart from "./family-tree-chart"
 import PersonSidebar from "./person-sidebar"
 import AddPersonModal from "./add-person-modal"
@@ -22,6 +23,7 @@ export interface Person {
   dob?: string | null
   dod?: string | null
   description?: string | null
+  photoUrl?: string | null
 }
 
 export interface FamilyTreeData {
@@ -157,6 +159,7 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
           dob: node.dob || null,
           dod: node.dod || null,
           description: node.desc || node.description || null,
+          photoUrl: node.photoUrl || null,
         }))
         setPeople(peopleData)
       }
@@ -333,13 +336,24 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
                       {searchResults.map((person) => (
                         <div
                           key={person.personId}
-                          className="px-4 py-2 hover:bg-gray-50 cursor-pointer border-b last:border-b-0"
+                          className="px-4 py-2 hover:bg-gray-50 cursor-pointer border-b last:border-b-0 flex items-center"
                           onClick={() => handleSearchResultClick(person)}
                         >
-                          <div className="font-medium">{person.name}</div>
-                          <div className="text-sm text-gray-500 flex justify-between">
-                            <span>{person.gender === "M" ? "Male" : person.gender === "F" ? "Female" : "Other"}</span>
-                            <span className="text-gray-400">Level {person.level}</span>
+                          <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-200 bg-gray-100 mr-3 flex-shrink-0">
+                            <Image
+                              src={person.photoUrl || "/placeholder-user.jpg"}
+                              alt={person.name || "Avatar"}
+                              width={32}
+                              height={32}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium truncate">{person.name}</div>
+                            <div className="text-sm text-gray-500 flex justify-between">
+                              <span>{person.gender === "M" ? "Male" : person.gender === "F" ? "Female" : "Other"}</span>
+                              <span className="text-gray-400">Level {person.level}</span>
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -414,17 +428,32 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
                     .map((person) => (
                     <div
                       key={person.personId}
-                      className="p-3 sm:p-4 rounded-lg border cursor-pointer hover:shadow-md transition-shadow"
+                      className="p-3 sm:p-4 rounded-lg border cursor-pointer hover:shadow-md transition-shadow flex"
                       style={{ backgroundColor: getPersonColor(person) }}
                       onClick={() => {
                         setSelectedPerson(person)
                         setSidebarOpen(true)
                       }}
                     >
-                      <div className="font-medium text-sm sm:text-base truncate">{person.name}</div>
-                      <div className="text-xs sm:text-sm text-gray-600 flex justify-between">
-                        <span>{person.gender === "M" ? "Male" : person.gender === "F" ? "Female" : "Other"}</span>
-                        <span className="text-gray-500">Level {person.level}</span>
+                      {/* Avatar - 3/10 width */}
+                      <div className="w-3/10 flex-shrink-0 mr-2 sm:mr-3">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 border-white bg-gray-200">
+                          <Image
+                            src={person.photoUrl || "/placeholder-user.jpg"}
+                            alt={person.name || "Avatar"}
+                            width={48}
+                            height={48}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      </div>
+                      {/* Info - 7/10 width */}
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm sm:text-base truncate">{person.name}</div>
+                        <div className="text-xs sm:text-sm text-gray-600 flex justify-between">
+                          <span>{person.gender === "M" ? "Male" : person.gender === "F" ? "Female" : "Other"}</span>
+                          <span className="text-gray-500">Level {person.level}</span>
+                        </div>
                       </div>
                     </div>
                   ))}

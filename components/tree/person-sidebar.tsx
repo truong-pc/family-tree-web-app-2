@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   X,
   User,
@@ -10,6 +10,8 @@ import {
   Edit2,
   Save,
   XCircle,
+  Camera,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +27,8 @@ import {
 import AddChildModal from "@/components/tree/add-child-modal";
 import { Person, FamilyTreeData } from "@/components/tree/family-tree-view";
 import { api } from "@/lib/api";
+import { extractPublicId } from "@/lib/utils";
+import Image from "next/image";
 
 interface Props {
   person: Person | null;
@@ -47,6 +51,8 @@ export default function PersonSidebar({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [editForm, setEditForm] = useState({
     name: "",
     gender: "M" as "M" | "F" | "O",
@@ -131,6 +137,132 @@ export default function PersonSidebar({
     setError(null);
   };
 
+  // Helper to delete image from Cloudinary
+  const deleteImage = async (url: string) => {
+    const publicId = extractPublicId(url);
+    if (!publicId) return;
+
+    try {
+      await fetch('/api/cloudinary/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ public_id: publicId }),
+      });
+    } catch (error) {
+      console.error("Error deleting old image:", error);
+    }
+  };
+
+  // Upload avatar to Cloudinary
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      setError("Please select an image file");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Image size must be less than 5MB");
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    setError(null);
+
+    try {
+      const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+      if (!cloudName) {
+        throw new Error("Cloudinary cloud name not configured");
+      }
+
+      // Upload to Cloudinary (unsigned upload)
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", "family-tree");
+      formData.append("cloud_name", cloudName);
+
+      const uploadResponse = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      if (!uploadResponse.ok) {
+        throw new Error("Failed to upload image to Cloudinary");
+      }
+
+      const uploadResult = await uploadResponse.json();
+      const photoUrl = uploadResult.secure_url;
+
+      // Store old photo URL
+      const oldPhotoUrl = person.photoUrl;
+
+      // Update person with new photo URL
+      const token =
+        typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      if (!token) throw new Error("Authentication required");
+
+      await api.updatePerson(token, chartId, person.personId, {
+        photoUrl: photoUrl,
+      });
+
+      // Delete old image if exists
+      if (oldPhotoUrl) {
+         await deleteImage(oldPhotoUrl);
+      }
+
+      onDataUpdate(); // Refresh data
+    } catch (error: any) {
+      console.error("Error uploading avatar:", error);
+      setError(error.message || "Failed to upload avatar. Please try again.");
+    } finally {
+      setIsUploadingAvatar(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  // Remove avatar
+  const handleRemoveAvatar = async () => {
+    if (!confirm("Are you sure you want to remove the avatar?")) return;
+
+    // Store old photo URL to delete
+    const photoUrlToDelete = person.photoUrl;
+
+    setIsUploadingAvatar(true);
+    setError(null);
+
+    try {
+      const token =
+        typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      if (!token) throw new Error("Authentication required");
+
+      await api.updatePerson(token, chartId, person.personId, {
+        photoUrl: "",
+      });
+
+      // Delete old image if exists
+      if (photoUrlToDelete) {
+        deleteImage(photoUrlToDelete);
+      }
+
+      onDataUpdate(); // Refresh data
+    } catch (error: any) {
+      console.error("Error removing avatar:", error);
+      setError(error.message || "Failed to remove avatar. Please try again.");
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
   // Delete person function
   const deletePerson = async () => {
     if (
@@ -141,6 +273,8 @@ export default function PersonSidebar({
       return;
     }
 
+    const photoUrlToDelete = person.photoUrl;
+
     setIsDeleting(true);
     try {
       const token =
@@ -148,6 +282,12 @@ export default function PersonSidebar({
       if (!token) throw new Error("Authentication required");
 
       await api.deletePerson(token, chartId, person.personId);
+
+      // Delete image if exists
+      if (photoUrlToDelete) {
+        deleteImage(photoUrlToDelete);
+      }
+
       onDataUpdate(); // Refresh data after successful deletion
       onClose(); // Close sidebar
     } catch (error) {
@@ -213,6 +353,55 @@ export default function PersonSidebar({
               {error}
             </div>
           )}
+
+          {/* Avatar Section */}
+          <div className="flex flex-col items-center space-y-3">
+            <div className="relative">
+              <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-gray-200 bg-gray-100">
+                <Image
+                  src={person.photoUrl || "/placeholder-user.jpg"}
+                  alt={person.name || "Avatar"}
+                  width={96}
+                  height={96}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              {isUploadingAvatar && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full">
+                  <Loader2 className="h-6 w-6 text-white animate-spin" />
+                </div>
+              )}
+            </div>
+            <div className="flex space-x-2">
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleAvatarUpload}
+                accept="image/*"
+                className="hidden"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploadingAvatar}
+              >
+                <Camera className="h-4 w-4 mr-1" />
+                {!person.photoUrl && "Upload"}
+              </Button>
+              {person.photoUrl && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRemoveAvatar}
+                  disabled={isUploadingAvatar}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </div>
 
           {/* Basic Info */}
           <div className="space-y-3">
