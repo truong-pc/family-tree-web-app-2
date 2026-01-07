@@ -1,37 +1,61 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { X, User, Users, Plus, Trash2, Edit2, Save, XCircle } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import AddChildModal from "@/components/tree/add-child-modal"
-import { Person, FamilyTreeData } from "@/components/tree/family-tree-view"
-import { api } from "@/lib/api"
+import { useState, useEffect } from "react";
+import {
+  X,
+  User,
+  Users,
+  Plus,
+  Trash2,
+  Edit2,
+  Save,
+  XCircle,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import AddChildModal from "@/components/tree/add-child-modal";
+import { Person, FamilyTreeData } from "@/components/tree/family-tree-view";
+import { api } from "@/lib/api";
 
 interface Props {
-  person: Person | null
-  isOpen: boolean
-  onClose: () => void
-  familyTreeData: FamilyTreeData
-  onDataUpdate: () => void
-  chartId: string
+  person: Person | null;
+  isOpen: boolean;
+  onClose: () => void;
+  familyTreeData: FamilyTreeData;
+  onDataUpdate: () => void;
+  chartId: string;
 }
 
-export default function PersonSidebar({ person, isOpen, onClose, familyTreeData, onDataUpdate, chartId }: Props) {
-  const [showAddChildModal, setShowAddChildModal] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [isEditing, setIsEditing] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
+export default function PersonSidebar({
+  person,
+  isOpen,
+  onClose,
+  familyTreeData,
+  onDataUpdate,
+  chartId,
+}: Props) {
+  const [showAddChildModal, setShowAddChildModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [editForm, setEditForm] = useState({
     name: "",
     gender: "M" as "M" | "F" | "O",
+    level: "",
     dob: "",
     dod: "",
     description: "",
-  })
+  });
+  const [error, setError] = useState<string | null>(null);
 
   // Reset edit form when person changes
   useEffect(() => {
@@ -39,83 +63,109 @@ export default function PersonSidebar({ person, isOpen, onClose, familyTreeData,
       setEditForm({
         name: person.name || "",
         gender: person.gender || "M",
+        level: person.level?.toString() || "",
         dob: person.dob || "",
         dod: person.dod || "",
         description: person.description || "",
-      })
-      setIsEditing(false)
+      });
+      setIsEditing(false);
+      setError(null);
     }
-  }, [person])
+  }, [person]);
 
-  if (!person) return null
+  if (!person) return null;
 
   // Save edited person
   const handleSave = async () => {
-    setIsSaving(true)
+    setError(null);
+
+    // Validate level
+    if (!editForm.level || editForm.level.trim() === "") {
+      setError("Generation Level is required");
+      return;
+    }
+
+    const levelNum = parseInt(editForm.level);
+    if (isNaN(levelNum) || levelNum <= 0) {
+      setError("Generation Level must be a positive number");
+      return;
+    }
+
+    setIsSaving(true);
     try {
-      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
-      if (!token) throw new Error("Authentication required")
+      const token =
+        typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      if (!token) throw new Error("Authentication required");
 
       await api.updatePerson(token, chartId, person.personId, {
         name: editForm.name,
         gender: editForm.gender,
+        level: levelNum,
         dob: editForm.dob || null,
         dod: editForm.dod || null,
         description: editForm.description || null,
-      })
+      });
 
-      setIsEditing(false)
-      onDataUpdate() // Refresh data after successful update
+      setIsEditing(false);
+      setError(null);
+      onDataUpdate(); // Refresh data after successful update
     } catch (error) {
-      console.error("Error updating person:", error)
-      alert("Failed to update person. Please try again.")
+      console.error("Error updating person:", error);
+      setError("Failed to update person. Please try again.");
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }
+  };
 
   // Cancel editing
   const handleCancelEdit = () => {
     setEditForm({
       name: person.name || "",
       gender: person.gender || "M",
+      level: person.level?.toString() || "",
       dob: person.dob || "",
       dod: person.dod || "",
       description: person.description || "",
-    })
-    setIsEditing(false)
-  }
+    });
+    setIsEditing(false);
+    setError(null);
+  };
 
   // Delete person function
   const deletePerson = async () => {
-    if (!confirm(`Are you sure you want to delete ${person.name}? This will also remove all their relationships.`)) {
-      return
+    if (
+      !confirm(
+        `Are you sure you want to delete ${person.name}? This will also remove all their relationships.`
+      )
+    ) {
+      return;
     }
 
-    setIsDeleting(true)
+    setIsDeleting(true);
     try {
-      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
-      if (!token) throw new Error("Authentication required")
-      
-      await api.deletePerson(token, chartId, person.personId)
-      onDataUpdate() // Refresh data after successful deletion
-      onClose() // Close sidebar
+      const token =
+        typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      if (!token) throw new Error("Authentication required");
+
+      await api.deletePerson(token, chartId, person.personId);
+      onDataUpdate(); // Refresh data after successful deletion
+      onClose(); // Close sidebar
     } catch (error) {
-      console.error("Error deleting person:", error)
-      alert("Failed to delete person. Please try again.")
+      console.error("Error deleting person:", error);
+      alert("Failed to delete person. Please try again.");
     } finally {
-      setIsDeleting(false)
+      setIsDeleting(false);
     }
-  }
+  };
 
   // Get parents and children
   const parents = familyTreeData.links
     .filter((link) => link.target === person.name)
-    .map((link) => link.source)
+    .map((link) => link.source);
 
   const children = familyTreeData.links
     .filter((link) => link.source === person.name)
-    .map((link) => link.target)
+    .map((link) => link.target);
 
   return (
     <>
@@ -157,6 +207,13 @@ export default function PersonSidebar({ person, isOpen, onClose, familyTreeData,
         </div>
 
         <div className="p-6 space-y-6 overflow-y-auto h-[calc(100vh-88px)]">
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+              {error}
+            </div>
+          )}
+
           {/* Basic Info */}
           <div className="space-y-3">
             <div className="flex items-center space-x-2">
@@ -166,11 +223,9 @@ export default function PersonSidebar({ person, isOpen, onClose, familyTreeData,
             <div className="pl-7 space-y-2">
               <div>
                 <span className="text-sm text-gray-500">Person ID: </span>
-                <span className="font-mono font-medium text-blue-600">{person.personId}</span>
-              </div>
-              <div>
-                <span className="text-sm text-gray-500">Level: </span>
-                <span className="font-medium text-gray-700">{person.level}</span>
+                <span className="font-mono font-medium text-blue-600">
+                  {person.personId}
+                </span>
               </div>
 
               {isEditing ? (
@@ -180,50 +235,83 @@ export default function PersonSidebar({ person, isOpen, onClose, familyTreeData,
                     <label className="text-sm text-gray-500">Name:</label>
                     <Input
                       value={editForm.name}
-                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, name: e.target.value })
+                      }
                       className="mt-1"
                       placeholder="Enter name"
                     />
                   </div>
-                  <div>
-                    <label className="text-sm text-gray-500">Gender:</label>
-                    <Select
-                      value={editForm.gender}
-                      onValueChange={(value: "M" | "F" | "O") => setEditForm({ ...editForm, gender: value })}
-                    >
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Select gender" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="M">Male</SelectItem>
-                        <SelectItem value="F">Female</SelectItem>
-                        <SelectItem value="O">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm text-gray-500">Level:</label>
+                      <Input
+                        type="number"
+                        value={editForm.level}
+                        onChange={(e) =>
+                          setEditForm({ ...editForm, level: e.target.value })
+                        }
+                        className="mt-1"
+                        placeholder="1, 2, 3..."
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm text-gray-500">Gender:</label>
+                      <Select
+                        value={editForm.gender}
+                        onValueChange={(value: "M" | "F" | "O") =>
+                          setEditForm({ ...editForm, gender: value })
+                        }
+                      >
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="Select gender" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="M">Male</SelectItem>
+                          <SelectItem value="F">Female</SelectItem>
+                          <SelectItem value="O">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                   <div>
-                    <label className="text-sm text-gray-500">Date of Birth:</label>
+                    <label className="text-sm text-gray-500">
+                      Date of Birth:
+                    </label>
                     <Input
                       type="date"
                       value={editForm.dob}
-                      onChange={(e) => setEditForm({ ...editForm, dob: e.target.value })}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, dob: e.target.value })
+                      }
                       className="mt-1"
                     />
                   </div>
                   <div>
-                    <label className="text-sm text-gray-500">Date of Death:</label>
+                    <label className="text-sm text-gray-500">
+                      Date of Death:
+                    </label>
                     <Input
                       type="date"
                       value={editForm.dod}
-                      onChange={(e) => setEditForm({ ...editForm, dod: e.target.value })}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, dod: e.target.value })
+                      }
                       className="mt-1"
                     />
                   </div>
                   <div>
-                    <label className="text-sm text-gray-500">Description:</label>
+                    <label className="text-sm text-gray-500">
+                      Description:
+                    </label>
                     <Textarea
                       value={editForm.description}
-                      onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          description: e.target.value,
+                        })
+                      }
                       className="mt-1"
                       placeholder="Enter description"
                       rows={3}
@@ -253,30 +341,46 @@ export default function PersonSidebar({ person, isOpen, onClose, familyTreeData,
                 <>
                   {/* View Mode */}
                   <div>
+                    <span className="text-sm text-gray-500">Level: </span>
+                    <span className="font-medium text-gray-700">
+                      {person.level}
+                    </span>
+                  </div>
+                  <div>
                     <span className="text-sm text-gray-500">Name:</span>
                     <p className="font-medium">{person.name}</p>
                   </div>
                   <div>
                     <span className="text-sm text-gray-500">Gender:</span>
                     <Badge variant="secondary" className="ml-2">
-                      {person.gender === "M" ? "Male" : person.gender === "F" ? "Female" : "Other"}
+                      {person.gender === "M"
+                        ? "Male"
+                        : person.gender === "F"
+                        ? "Female"
+                        : "Other"}
                     </Badge>
                   </div>
                   {person.dob && (
                     <div>
-                      <span className="text-sm text-gray-500">Date of Birth:</span>
+                      <span className="text-sm text-gray-500">
+                        Date of Birth:
+                      </span>
                       <p className="text-sm mt-1">{person.dob}</p>
                     </div>
                   )}
                   {person.dod && (
                     <div>
-                      <span className="text-sm text-gray-500">Date of Death:</span>
+                      <span className="text-sm text-gray-500">
+                        Date of Death:
+                      </span>
                       <p className="text-sm mt-1">{person.dod}</p>
                     </div>
                   )}
                   {person.description && (
                     <div>
-                      <span className="text-sm text-gray-500">Description:</span>
+                      <span className="text-sm text-gray-500">
+                        Description:
+                      </span>
                       <p className="text-sm mt-1">{person.description}</p>
                     </div>
                   )}
@@ -311,7 +415,9 @@ export default function PersonSidebar({ person, isOpen, onClose, familyTreeData,
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <Users className="h-5 w-5 text-gray-500" />
-                <span className="font-medium">Children ({children.length})</span>
+                <span className="font-medium">
+                  Children ({children.length})
+                </span>
               </div>
               <Button
                 variant="outline"
@@ -346,11 +452,11 @@ export default function PersonSidebar({ person, isOpen, onClose, familyTreeData,
         onClose={() => setShowAddChildModal(false)}
         parent={person}
         onSuccess={() => {
-          onDataUpdate()
-          setShowAddChildModal(false)
+          onDataUpdate();
+          setShowAddChildModal(false);
         }}
         chartId={chartId}
       />
     </>
-  )
+  );
 }

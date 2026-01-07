@@ -32,7 +32,7 @@ interface AddPersonModalProps {
 export default function AddPersonModal({ isOpen, onClose, onSuccess, chartId }: AddPersonModalProps) {
   const [name, setName] = useState("")
   const [gender, setGender] = useState<"M" | "F" | "O">("M")
-  const [level, setLevel] = useState(0)
+  const [level, setLevel] = useState("")
   const [dob, setDob] = useState("")
   const [dod, setDod] = useState("")
   const [description, setDescription] = useState("")
@@ -48,15 +48,27 @@ export default function AddPersonModal({ isOpen, onClose, onSuccess, chartId }: 
       return
     }
 
+    if (!level || level.trim() === "") {
+      setError("Generation Level is required")
+      return
+    }
+
+    const levelNum = parseInt(level)
+    if (isNaN(levelNum) || levelNum < 1) {
+      setError("Generation Level must be a positive number")
+      return
+    }
+
     setIsSubmitting(true)
     try {
       const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
       if (!token) throw new Error("Authentication required")
 
+      const levelNum = parseInt(level)
       await api.createPerson(token, chartId, {
         name: name.trim(),
         gender,
-        level,
+        level: levelNum,
         dob: dob || null,
         dod: dod || null,
         description: description.trim() || null,
@@ -66,7 +78,7 @@ export default function AddPersonModal({ isOpen, onClose, onSuccess, chartId }: 
       // Reset form
       setName("")
       setGender("M")
-      setLevel(0)
+      setLevel("")
       setDob("")
       setDod("")
       setDescription("")
@@ -85,7 +97,7 @@ export default function AddPersonModal({ isOpen, onClose, onSuccess, chartId }: 
     if (!isSubmitting) {
       setName("")
       setGender("M")
-      setLevel(0)
+      setLevel("")
       setDob("")
       setDod("")
       setDescription("")
@@ -119,7 +131,6 @@ export default function AddPersonModal({ isOpen, onClose, onSuccess, chartId }: 
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter person's name"
               disabled={isSubmitting}
-              required
             />
           </div>
 
@@ -139,18 +150,17 @@ export default function AddPersonModal({ isOpen, onClose, onSuccess, chartId }: 
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="level">Generation Level</Label>
+              <Label htmlFor="level">Generation Level *</Label>
               <Input
                 id="level"
-                type="text"
+                type="number"
                 value={level}
-                onChange={(e) => setLevel(parseInt(e.target.value) || 0)}
-                placeholder="0, 1, 2..."
+                onChange={(e) => setLevel(e.target.value)}
+                placeholder="1, 2, 3..."
                 disabled={isSubmitting}
               />
             </div>
           </div>
-          <p className="text-xs text-gray-500 -mt-2">0 = root generation, 1 = children, 2 = grandchildren, etc.</p>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">

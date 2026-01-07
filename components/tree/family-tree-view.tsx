@@ -45,8 +45,18 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
   const [focusedPerson, setFocusedPerson] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [sortByLevel, setSortByLevel] = useState(true)
+  const [levelFilter, setLevelFilter] = useState<string>("")
   const sidebarRef = useRef<HTMLDivElement>(null)
+
+  // Update selectedPerson when people data changes (to reflect edits)
+  useEffect(() => {
+    if (selectedPerson && people.length > 0) {
+      const updatedPerson = people.find(p => p.personId === selectedPerson.personId)
+      if (updatedPerson) {
+        setSelectedPerson(updatedPerson)
+      }
+    }
+  }, [people])
 
   // Handle click outside sidebar to close it
   useEffect(() => {
@@ -58,12 +68,23 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
           // Don't close sidebar when clicking on tree nodes
           return
         }
+
+        // Check if any portal content is open (Select, Dropdown, etc.)
+        // If so, the click outside likely just meant to close that portal, not the sidebar
+        const isPortalOpen = 
+          document.querySelector('[data-slot="select-content"][data-state="open"]') ||
+          document.querySelector('[role="menu"][data-state="open"]')
+        
+        if (isPortalOpen) {
+          return
+        }
+        
         setSidebarOpen(false)
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    document.addEventListener('pointerdown', handleClickOutside)
+    return () => document.removeEventListener('pointerdown', handleClickOutside)
   }, [sidebarOpen])
 
   // Fetch all people and family tree data
@@ -228,45 +249,7 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
       {!readOnly && (
         <div className="bg-gray-100 border-b">
           <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-3 sm:py-4 space-y-3 sm:space-y-0">
-              <div className="flex items-center space-x-2 sm:space-x-4 w-full sm:w-auto">
-                <div className="relative flex-1 sm:flex-none">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    type="text"
-                    placeholder="Search family members..."
-                    value={searchTerm}
-                    onChange={(e) => handleSearch(e.target.value)}
-                    className="pl-10 pr-10 w-full sm:w-64"
-                  />
-                  {searchTerm && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={clearSearch}
-                      className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-200"
-                    >
-                      <X className="h-4 w-4 text-gray-400" />
-                    </Button>
-                  )}
-                  {searchResults.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 bg-white border rounded-md shadow-lg z-10 mt-1">
-                      {searchResults.map((person) => (
-                        <div
-                          key={person.personId}
-                          className="px-4 py-2 hover:bg-gray-50 cursor-pointer border-b last:border-b-0"
-                          onClick={() => handleSearchResultClick(person)}
-                        >
-                          <div className="font-medium">{person.name}</div>
-                          <div className="text-sm text-gray-500">
-                            {person.gender === "M" ? "Male" : person.gender === "F" ? "Female" : "Other"}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
+            <div className="flex flex-col sm:flex-row justify-end items-start sm:items-center py-3 sm:py-4 space-y-3 sm:space-y-0">
               <div className="flex items-center space-x-2 sm:space-x-4 w-full sm:w-auto">
                 <Button onClick={() => setShowAddPersonModal(true)} className="flex-1 sm:flex-none">
                   <Plus className="h-4 w-4 mr-1 sm:mr-2" />
@@ -293,7 +276,7 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
           <div className="max-w-7xl mx-auto px-1 sm:px-4 lg:px-8 py-2 sm:py-8">
             {/* Family Tree Visualization */}
             <Card className="mb-2 sm:mb-8 gap-2">
-              <CardHeader className={`pb-1 sm:pb-3 px-2 sm:px-6 ${readOnly ? 'space-y-3' : ''}`}>
+              <CardHeader className="pb-1 sm:pb-3 px-2 sm:px-6 space-y-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg sm:text-xl">Family Tree Visualization</CardTitle>
                   <Button
@@ -315,46 +298,44 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
                     </svg>
                   </Button>
                 </div>
-                {/* Search Bar for Tree Visualization - Only in readOnly mode */}
-                {readOnly && (
-                  <div className="relative w-full sm:w-96">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                    <Input
-                      type="text"
-                      placeholder="Search to zoom to person..."
-                      value={searchTerm}
-                      onChange={(e) => handleSearch(e.target.value)}
-                      className="pl-10 pr-10 w-full"
-                    />
-                    {searchTerm && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={clearSearch}
-                        className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-200"
-                      >
-                        <X className="h-4 w-4 text-gray-400" />
-                      </Button>
-                    )}
-                    {searchResults.length > 0 && (
-                      <div className="absolute top-full left-0 right-0 bg-white border rounded-md shadow-lg z-10 mt-1 max-h-64 overflow-y-auto">
-                        {searchResults.map((person) => (
-                          <div
-                            key={person.personId}
-                            className="px-4 py-2 hover:bg-gray-50 cursor-pointer border-b last:border-b-0"
-                            onClick={() => handleSearchResultClick(person)}
-                          >
-                            <div className="font-medium">{person.name}</div>
-                            <div className="text-sm text-gray-500 flex justify-between">
-                              <span>{person.gender === "M" ? "Male" : person.gender === "F" ? "Female" : "Other"}</span>
-                              <span className="text-gray-400">Level {person.level}</span>
-                            </div>
+                {/* Search Bar for Tree Visualization */}
+                <div className="relative w-full sm:w-96">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    type="text"
+                    placeholder="Search to zoom to person..."
+                    value={searchTerm}
+                    onChange={(e) => handleSearch(e.target.value)}
+                    className="pl-10 pr-10 w-full"
+                  />
+                  {searchTerm && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={clearSearch}
+                      className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-200"
+                    >
+                      <X className="h-4 w-4 text-gray-400" />
+                    </Button>
+                  )}
+                  {searchResults.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 bg-white border rounded-md shadow-lg z-10 mt-1 max-h-64 overflow-y-auto">
+                      {searchResults.map((person) => (
+                        <div
+                          key={person.personId}
+                          className="px-4 py-2 hover:bg-gray-50 cursor-pointer border-b last:border-b-0"
+                          onClick={() => handleSearchResultClick(person)}
+                        >
+                          <div className="font-medium">{person.name}</div>
+                          <div className="text-sm text-gray-500 flex justify-between">
+                            <span>{person.gender === "M" ? "Male" : person.gender === "F" ? "Female" : "Other"}</span>
+                            <span className="text-gray-400">Level {person.level}</span>
                           </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </CardHeader>
               <CardContent className="pt-1 px-1 pb-1 sm:pt-2 sm:px-6 sm:pb-6">
                 <FamilyTreeChart
@@ -373,23 +354,53 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
             {/* People List */}
             <Card>
               <CardHeader className="pb-2 sm:pb-6 px-2 sm:px-6">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg sm:text-xl">Family Members ({people.length})</CardTitle>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setSortByLevel(!sortByLevel)}
-                    className="text-gray-600"
-                  >
-                    <ArrowUpDown className="h-4 w-4 mr-1" />
-                    {sortByLevel ? "Sort by Level" : "Default"}
-                  </Button>
+                <div className="flex flex-col space-y-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg sm:text-xl">Family Members ({people.length})</CardTitle>
+                    <div className="flex items-center space-x-2">
+                      <label className="text-sm text-gray-600">Số đời:</label>
+                      <div className="relative">
+                        <Input
+                          type="text"
+                          placeholder="Nhập số đời"
+                          value={levelFilter}
+                          onChange={(e) => {
+                            const value = e.target.value
+                            setLevelFilter(value)
+                            if (value && parseInt(value) <= 0) {
+                              // setLevelError("Số đời phải lớn hơn 0")
+                            } else {
+                              // setLevelError(null)
+                            }
+                          }}
+                          className="w-32 h-9 pr-8"
+                        />
+                        {levelFilter && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setLevelFilter("")
+                              // setLevelError(null)
+                            }}
+                            className="absolute right-0 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-transparent"
+                          >
+                            <X className="h-4 w-4 text-gray-400" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="p-2 sm:p-6">
                 <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-3">
                   {[...people]
-                    .sort((a, b) => sortByLevel ? a.level - b.level : 0)
+                    .filter((person) => {
+                      if (!levelFilter) return true
+                      const filterLevel = parseInt(levelFilter)
+                      return person.level === filterLevel
+                    })
                     .map((person) => (
                     <div
                       key={person.personId}
@@ -410,12 +421,20 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
                 </div>
 
                 {/* Empty state */}
-                {people.length === 0 && (
+                {people.filter((person) => {
+                  if (!levelFilter ) return true
+                  const filterLevel = parseInt(levelFilter)
+                  return person.level === filterLevel
+                }).length === 0 && (
                   <div className="text-center py-8 sm:py-12">
                     <Users className="h-12 w-12 sm:h-16 sm:w-16 text-gray-300 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No family members yet</h3>
-                    <p className="text-gray-600 mb-4">Start building your family tree by adding your first person.</p>
-                    {!readOnly && (
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      {levelFilter ? `Không có thành viên ở đời ${levelFilter}` : "No family members yet"}
+                    </h3>
+                    <p className="text-gray-600 mb-4">
+                      {levelFilter ? "Thử nhập số đời khác hoặc xóa bộ lọc." : "Start building your family tree by adding your first person."}
+                    </p>
+                    {!readOnly && !levelFilter && (
                       <Button onClick={() => setShowAddPersonModal(true)}>
                         <Plus className="h-4 w-4 mr-2" />
                         Add First Person

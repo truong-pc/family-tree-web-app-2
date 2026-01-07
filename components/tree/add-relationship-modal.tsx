@@ -66,7 +66,7 @@ export default function AddRelationshipModal({
       if (error.response?.status === 404) {
         setError("ParentId or childId not found")
       } else {
-        setError(error.response?.data?.message || "Failed to create relationship. Please try again.")
+        setError(error.response?.data?.detail || "Failed to create relationship. Please try again.")
       }
     } finally {
       setIsSubmitting(false)
