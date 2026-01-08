@@ -20,6 +20,9 @@ export default function LoginPage() {
         <LoginForm />
 
         <div className="text-center space-y-4">
+          <Link href="/reset-password" className="text-sm text-primary hover:underline block mb-4">
+            Quên mật khẩu?
+          </Link>
           <p className="text-muted-foreground">
             Chưa có tài khoản?{" "}
             <Link href="/register" className="text-primary hover:underline font-semibold">

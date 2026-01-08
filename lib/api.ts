@@ -148,6 +148,32 @@ export const api = {
     }
   },
 
+  async forgotPassword(email: string) {
+    try {
+      const response = await apiClient.post("/api/v1/auth/forgot-password", {
+        email,
+      })
+      return response.data
+    } catch (error) {
+      console.error("Forgot password error:", error)
+      throw error
+    }
+  },
+
+  async resetPassword(email: string, otp: string, newPassword: string) {
+    try {
+      const response = await apiClient.post("/api/v1/auth/reset-password", {
+        email,
+        otp,
+        new_password: newPassword,
+      })
+      return response.data
+    } catch (error) {
+      console.error("Reset password error:", error)
+      throw error
+    }
+  },
+
   async getMe(token: string) {
     try {
       const response = await apiClient.get("/api/v1/auth/me", {
