@@ -107,7 +107,7 @@ export default function FamilyTreeChart({ data, onNodeClick, focusedPerson, getP
     const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`)
 
     // Node dimensions - responsive based on screen size
-    const nodeWidth = width < 1024 ? 120 : 120
+    const nodeWidth = width < 1024 ? 120 : 130
     const nodeHeight = width < 1024 ? 70 : 80
     const avatarSize = width < 1024 ? 32 : 40
     const minNodeSpacing = width < 768 ? 15 : 20
@@ -333,7 +333,7 @@ export default function FamilyTreeChart({ data, onNodeClick, focusedPerson, getP
 
     // Add labels with responsive font size - positioned below avatar
     const fontSize = width < 768 ? "10px" : "12px"
-    const maxNameLength = width < 768 ? 12 : 14
+    const maxNameLength = width < 768 ? 15 : 18
     
     // Position text relative to avatar for consistent spacing
     const textY = avatarY + avatarSize + (width < 768 ? 15 : 20)

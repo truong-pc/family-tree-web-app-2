@@ -436,7 +436,7 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
                       }}
                     >
                       {/* Avatar - 3/10 width */}
-                      <div className="w-3/10 flex-shrink-0 mr-2 sm:mr-3">
+                      <div className="w-3/10 flex-shrink-0 mr-1 sm:mr-2">
                         <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 border-white bg-gray-200">
                           <Image
                             src={person.photoUrl || "/placeholder-user.jpg"}
@@ -449,7 +449,7 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
                       </div>
                       {/* Info - 7/10 width */}
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm sm:text-base truncate">{person.name}</div>
+                        <div className="font-medium text-sm sm:text-base truncate" style={{ direction: 'rtl', textAlign: 'left' }}>{person.name}</div>
                         <div className="text-xs sm:text-sm text-gray-600 flex justify-between">
                           <span>{person.gender === "M" ? "Male" : person.gender === "F" ? "Female" : "Other"}</span>
                           <span className="text-gray-500">Level {person.level}</span>
