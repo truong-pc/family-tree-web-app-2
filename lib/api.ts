@@ -43,6 +43,8 @@ apiClient.interceptors.response.use(
               // Lưu token mới
               if (access_token && typeof window !== "undefined") {
                 localStorage.setItem("token", access_token)
+                // Dispatch event để AuthContext cập nhật state token
+                window.dispatchEvent(new CustomEvent("token-refreshed", { detail: access_token }))
               }
               
               return access_token
