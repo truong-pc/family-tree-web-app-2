@@ -53,9 +53,6 @@ export default function PublishedCharts() {
         <div className="space-y-2">
           <p className="font-semibold text-yellow-800 dark:text-yellow-200">⚠️ Lỗi Kết Nối</p>
           <p className="text-sm text-yellow-700 dark:text-yellow-300">{error}</p>
-          <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-2">
-            Đảm bảo backend API đang chạy và CORS được cấu hình đúng.
-          </p>
         </div>
       </Card>
     )

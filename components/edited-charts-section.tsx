@@ -64,7 +64,7 @@ export default function EditedChartsSection() {
       <Card className="p-6 bg-yellow-50 border border-yellow-200 dark:bg-yellow-950/20 dark:border-yellow-800">
         <div className="space-y-2">
           <p className="font-semibold text-yellow-800 dark:text-yellow-200">
-            ⚠️ Lỗi
+            ⚠️ Lỗi Kết Nối
           </p>
           <p className="text-sm text-yellow-700 dark:text-yellow-300">
             {error}
