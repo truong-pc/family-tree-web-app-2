@@ -42,7 +42,7 @@ export default function DashboardPage() {
         <div>
           <h1 className="text-3xl font-bold text-foreground mb-2">Trang Quản Lý</h1>
           <p className="text-muted-foreground">
-            Xin chào, <span className="font-semibold text-primary">{user.full_name || user.email}</span>!
+            Xin chào, <span className="font-semibold text-primary">{user.fullName || user.email}</span>!
           </p>
         </div>
 

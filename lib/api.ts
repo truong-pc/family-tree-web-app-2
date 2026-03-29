@@ -86,12 +86,12 @@ apiClient.interceptors.response.use(
 )
 
 export const api = {
-  async register(email: string, password: string, full_name: string, phone?: string, dob?: string) {
+  async register(email: string, password: string, fullName: string, phone?: string, dob?: string) {
     try {
       const response = await apiClient.post("/api/v1/auth/register", {
         email,
         password,
-        full_name,
+        fullName,
         phone,
         dob,
       })
@@ -138,7 +138,7 @@ export const api = {
     try {
       const response = await apiClient.post(
         "/api/v1/auth/password/change",
-        { old_password: oldPassword, new_password: newPassword },
+        { oldPassword: oldPassword, newPassword: newPassword },
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -167,7 +167,7 @@ export const api = {
       const response = await apiClient.post("/api/v1/auth/reset-password", {
         email,
         otp,
-        new_password: newPassword,
+        newPassword: newPassword,
       })
       return response.data
     } catch (error) {
@@ -188,7 +188,7 @@ export const api = {
     }
   },
 
-  async updateMe(token: string, data: { full_name?: string; phone?: string; dob?: string }) {
+  async updateMe(token: string, data: { fullName?: string; phone?: string; dob?: string }) {
     try {
       const response = await apiClient.put("/api/v1/auth/me", data, {
         headers: { Authorization: `Bearer ${token}` },

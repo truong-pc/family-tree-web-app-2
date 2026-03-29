@@ -26,7 +26,7 @@ interface Chart {
 
 interface EditorInfo {
   _id: string
-  full_name: string
+  fullName: string
   email: string
 }
 
@@ -307,7 +307,7 @@ export default function UserChartSection() {
                   editorsInfo.map((editor) => (
                     <div key={editor._id} className="flex justify-between items-center p-2 bg-secondary rounded-md">
                       <div className="flex flex-col">
-                        <span className="text-sm font-medium">{editor.full_name}</span>
+                        <span className="text-sm font-medium">{editor.fullName}</span>
                         <span className="text-xs text-muted-foreground">{editor.email}</span>
                       </div>
                       <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleRemoveEditor(editor._id)}>

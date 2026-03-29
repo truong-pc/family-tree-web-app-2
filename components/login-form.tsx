@@ -35,7 +35,7 @@ export default function LoginForm() {
       login(token, refreshToken, {
         id: userInfo.id,
         email: userInfo.email,
-        full_name: userInfo.full_name,
+        fullName: userInfo.fullName,
       })
 
       router.push("/dashboard")

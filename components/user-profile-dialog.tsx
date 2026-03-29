@@ -27,7 +27,7 @@ export function UserProfileDialog({
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
-    full_name: "",
+    fullName: "",
     email: "",
     phone: "",
     dob: "",
@@ -44,7 +44,7 @@ export function UserProfileDialog({
       setLoading(true)
       const data = await api.getMe(token!)
       setFormData({
-        full_name: data.full_name || "",
+        fullName: data.fullName || "",
         email: data.email || "",
         phone: data.phone || "",
         dob: data.dob ? data.dob.split('T')[0] : "", // Handle date format if needed
@@ -66,13 +66,13 @@ export function UserProfileDialog({
     try {
       setLoading(true)
       await api.updateMe(token!, {
-        full_name: formData.full_name,
+        fullName: formData.fullName,
         phone: formData.phone,
         dob: formData.dob,
       })
       // Cập nhật user trong context và localStorage
       updateUser({
-        full_name: formData.full_name,
+        fullName: formData.fullName,
       })
       toast({
         title: "Thành công",
@@ -119,9 +119,9 @@ export function UserProfileDialog({
               </Label>
               <Input
                 id="name"
-                value={formData.full_name}
+                value={formData.fullName}
                 onChange={(e) =>
-                  setFormData({ ...formData, full_name: e.target.value })
+                  setFormData({ ...formData, fullName: e.target.value })
                 }
                 className="col-span-3"
               />
