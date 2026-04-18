@@ -38,8 +38,8 @@ export default function RegisterForm() {
 
       // Auto login after registration
       const loginResponse = await api.login(email, password)
-      const token = loginResponse.access_token || loginResponse.token
-      const refreshToken = loginResponse.refresh_token
+      const token = loginResponse.accessToken || loginResponse.token
+      const refreshToken = loginResponse.refreshToken
 
       const userInfo = await api.getMe(token)
 

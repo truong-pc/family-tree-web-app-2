@@ -26,8 +26,8 @@ export default function LoginForm() {
     try {
       const response = await api.login(email, password)
       // Assume response has access_token and refresh_token
-      const token = response.access_token || response.token
-      const refreshToken = response.refresh_token
+      const token = response.accessToken || response.token
+      const refreshToken = response.refreshToken
 
       // Get user info
       const userInfo = await api.getMe(token)

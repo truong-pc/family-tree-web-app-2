@@ -35,19 +35,19 @@ apiClient.interceptors.response.use(
             try {
               // Gọi API refresh token
               const response = await axios.post(`${API_BASE_URL}/api/v1/auth/refresh`, {
-                refresh_token: refreshToken,
+                refreshToken: refreshToken,
               })
               
-              const { access_token } = response.data
+              const { accessToken } = response.data
               
               // Lưu token mới
-              if (access_token && typeof window !== "undefined") {
-                localStorage.setItem("token", access_token)
+              if (accessToken && typeof window !== "undefined") {
+                localStorage.setItem("token", accessToken)
                 // Dispatch event để AuthContext cập nhật state token
-                window.dispatchEvent(new CustomEvent("token-refreshed", { detail: access_token }))
+                window.dispatchEvent(new CustomEvent("token-refreshed", { detail: accessToken }))
               }
               
-              return access_token
+              return accessToken
             } catch (err) {
               // Xóa token và redirect về login
               if (typeof window !== "undefined") {
@@ -122,7 +122,7 @@ export const api = {
     try {
       const response = await apiClient.post(
         "/api/v1/auth/logout",
-        { refresh_token: refreshToken },
+        { refreshToken: refreshToken },
         {
           headers: { Authorization: `Bearer ${token}` },
         }
