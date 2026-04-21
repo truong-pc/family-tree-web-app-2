@@ -40,7 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(false)
   }, [])
 
-  // Lắng nghe event khi token được refresh từ api.ts
+  // Lắng nghe event khi token được refresh từ api/client.ts
   useEffect(() => {
     const handleTokenRefreshed = (e: CustomEvent<string>) => {
       setToken(e.detail)

@@ -20,8 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { api } from "@/lib/api"
-
+import * as personApi from "@/lib/api/person"
 interface AddPersonModalProps {
   isOpen: boolean
   onClose: () => void
@@ -65,7 +64,7 @@ export default function AddPersonModal({ isOpen, onClose, onSuccess, chartId }: 
       if (!token) throw new Error("Authentication required")
 
       const levelNum = parseInt(level)
-      await api.createPerson(token, chartId, {
+      await personApi.createPerson(token, chartId, {
         name: name.trim(),
         gender,
         level: levelNum,

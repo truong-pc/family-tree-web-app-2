@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { api } from "@/lib/api";
+import * as chartApi from "@/lib/api/chart"
 import { Card } from "@/components/ui/card";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -35,7 +35,7 @@ export default function EditedChartsSection() {
         }
 
         console.log("Starting fetch edited charts...");
-        const data = await api.getEditedCharts(token);
+        const data = await chartApi.getEditedCharts(token);
         console.log("Successfully fetched edited charts:", data);
         setCharts(data || []);
         setError("");

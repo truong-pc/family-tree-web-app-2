@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { api } from "@/lib/api"
+import * as chartApi from "@/lib/api/chart"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -55,7 +55,7 @@ export default function UserChartSection() {
     
     setIsLoadingEditors(true)
     try {
-      const promises = editorIds.map(userId => api.getEditorName(token!, userId))
+      const promises = editorIds.map(userId => chartApi.getEditorName(token!, userId))
       const results = await Promise.all(promises)
       setEditorsInfo(results)
     } catch (error) {
@@ -70,7 +70,7 @@ export default function UserChartSection() {
     if (!token) return
     setIsLoading(true)
     try {
-      const data = await api.getMyChart(token!)
+      const data = await chartApi.getMyChart(token!)
       setChart(data)
       if (data && data.editors) {
         await fetchEditorsInfo(data.editors)
@@ -92,7 +92,7 @@ export default function UserChartSection() {
       return
     }
     try {
-      await api.createChart(token!, { name: formData.name, description: formData.description })
+      await chartApi.createChart(token!, { name: formData.name, description: formData.description })
       toast({ title: "Thành công", description: "Đã tạo gia phả mới." })
       setIsCreateOpen(false)
       fetchMyChart()
@@ -104,7 +104,7 @@ export default function UserChartSection() {
   const handleUpdate = async () => {
     if (!chart || !token) return
     try {
-      await api.updateChart(token!, chart._id, { 
+      await chartApi.updateChart(token!, chart._id, { 
         name: formData.name, 
         description: formData.description,
         published: formData.published 
@@ -120,7 +120,7 @@ export default function UserChartSection() {
   const handleDelete = async () => {
     if (!chart || !token || !confirm("Bạn có chắc chắn muốn xóa gia phả này? Hành động này không thể hoàn tác.")) return
     try {
-      await api.deleteChart(token!, chart._id)
+      await chartApi.deleteChart(token!, chart._id)
       toast({ title: "Thành công", description: "Đã xóa gia phả." })
       setChart(null)
     } catch (error) {
@@ -132,7 +132,7 @@ export default function UserChartSection() {
     if (!chart || !token || !editorEmail) return
     setEditorError("")
     try {
-      await api.addEditor(token!, chart._id, editorEmail)
+      await chartApi.addEditor(token!, chart._id, editorEmail)
       toast({ title: "Thành công", description: `Đã thêm ${editorEmail} làm người chỉnh sửa.` })
       setEditorEmail("")
       fetchMyChart()
@@ -151,7 +151,7 @@ export default function UserChartSection() {
   const handleRemoveEditor = async (email: string) => {
     if (!chart || !token) return
     try {
-      await api.removeEditor(token!, chart._id, email)
+      await chartApi.removeEditor(token!, chart._id, email)
       toast({ title: "Thành công", description: "Đã xóa quyền chỉnh sửa." })
       fetchMyChart()
     } catch (error) {

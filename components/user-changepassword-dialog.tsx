@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useAuth } from "@/lib/auth-context"
-import { api } from "@/lib/api"
+import * as authApi from "@/lib/api/auth"
 import { useRouter } from "next/navigation"
 import {
   Dialog,
@@ -63,7 +63,7 @@ export function UserChangePasswordDialog({ open, onOpenChange }: UserChangePassw
         return
       }
 
-      const response = await api.changePassword(token, oldPassword, newPassword)
+      const response = await authApi.changePassword(token, oldPassword, newPassword)
       
       // Đóng dialog
       onOpenChange(false)

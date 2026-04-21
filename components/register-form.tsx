@@ -5,7 +5,7 @@ import type React from "react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
-import { api } from "@/lib/api"
+import * as authApi from "@/lib/api/auth"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -34,14 +34,14 @@ export default function RegisterForm() {
     setIsLoading(true)
 
     try {
-      await api.register(email, password, fullName, phone || undefined, dob || undefined)
+      await authApi.register(email, password, fullName, phone || undefined, dob || undefined)
 
       // Auto login after registration
-      const loginResponse = await api.login(email, password)
+      const loginResponse = await authApi.login(email, password)
       const token = loginResponse.accessToken || loginResponse.token
       const refreshToken = loginResponse.refreshToken
 
-      const userInfo = await api.getMe(token)
+      const userInfo = await authApi.getMe(token)
 
       login(token, refreshToken, {
         id: userInfo.userId || userInfo.id, // Handle both userId (from spec) and id (potential legacy)

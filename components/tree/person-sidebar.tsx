@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/select";
 import AddChildModal from "@/components/tree/add-child-modal";
 import { Person, FamilyTreeData } from "@/components/tree/family-tree-view";
-import { api } from "@/lib/api";
+import * as personApi from "@/lib/api/person"
 import { extractPublicId } from "@/lib/utils";
 import Image from "next/image";
 
@@ -103,7 +103,7 @@ export default function PersonSidebar({
         typeof window !== "undefined" ? localStorage.getItem("token") : null;
       if (!token) throw new Error("Authentication required");
 
-      await api.updatePerson(token, chartId, person.personId, {
+      await personApi.updatePerson(token, chartId, person.personId, {
         name: editForm.name,
         gender: editForm.gender,
         level: levelNum,
@@ -208,7 +208,7 @@ export default function PersonSidebar({
         typeof window !== "undefined" ? localStorage.getItem("token") : null;
       if (!token) throw new Error("Authentication required");
 
-      await api.updatePerson(token, chartId, person.personId, {
+      await personApi.updatePerson(token, chartId, person.personId, {
         photoUrl: photoUrl,
       });
 
@@ -245,7 +245,7 @@ export default function PersonSidebar({
         typeof window !== "undefined" ? localStorage.getItem("token") : null;
       if (!token) throw new Error("Authentication required");
 
-      await api.updatePerson(token, chartId, person.personId, {
+      await personApi.updatePerson(token, chartId, person.personId, {
         photoUrl: "",
       });
 
@@ -281,7 +281,7 @@ export default function PersonSidebar({
         typeof window !== "undefined" ? localStorage.getItem("token") : null;
       if (!token) throw new Error("Authentication required");
 
-      await api.deletePerson(token, chartId, person.personId);
+      await personApi.deletePerson(token, chartId, person.personId);
 
       // Delete image if exists
       if (photoUrlToDelete) {

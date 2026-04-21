@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { useState, useEffect, useRef } from "react"
-import { api } from "@/lib/api"
+import * as authApi from "@/lib/api/auth"
 import { UserProfileDialog } from "@/components/user-profile-dialog"
 import { UserChangePasswordDialog } from "@/components/user-changepassword-dialog"
 
@@ -36,7 +36,7 @@ export default function DashboardNavbar() {
   const handleLogout = async () => {
     try {
       if (token && refreshToken) {
-        await api.logout(token, refreshToken)
+        await authApi.logout(token, refreshToken)
       }
     } catch (err) {
       console.error("Logout error:", err)

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useAuth } from "@/lib/auth-context"
-import { api } from "@/lib/api"
+import * as chartApi from "@/lib/api/chart"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 
@@ -24,7 +24,7 @@ export default function MyCharts() {
       if (!token) return
 
       try {
-        const data = await api.getMyChart(token)
+        const data = await chartApi.getMyChart(token)
         setCharts(Array.isArray(data) ? data : [])
       } catch (err) {
         setError("Không thể tải danh sách gia phả")

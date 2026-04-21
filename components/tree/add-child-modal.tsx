@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { api } from "@/lib/api"
+import * as personApi from "@/lib/api/person"
 import { Person } from "./family-tree-view"
 
 interface AddChildModalProps {
@@ -54,7 +54,7 @@ export default function AddChildModal({ isOpen, onClose, parent, onSuccess, char
       if (!token) throw new Error("Authentication required")
 
       // Create the child with parent relationship
-      await api.createPerson(token, chartId, {
+      await personApi.createPerson(token, chartId, {
         name: name.trim(),
         gender,
         level: parent.level + 1, // Child is one level below parent

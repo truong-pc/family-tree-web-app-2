@@ -11,7 +11,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog"
-import { api } from "@/lib/api"
+import * as treeApi from "@/lib/api/tree"
 import { Person } from "./family-tree-view"
 
 interface AddRelationshipModalProps {
@@ -53,7 +53,7 @@ export default function AddRelationshipModal({
       const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
       if (!token) throw new Error("Authentication required")
 
-      await api.createParentChildRelationship(token, chartId, parseInt(parentId), parseInt(childId))
+      await treeApi.createParentChildRelationship(token, chartId, parseInt(parentId), parseInt(childId))
 
       // Reset form
       setParentId("")

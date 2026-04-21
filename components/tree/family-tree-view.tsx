@@ -5,7 +5,8 @@ import { Search, Plus, X, Users, ArrowUpDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { api } from "@/lib/api"
+import * as treeApi from "@/lib/api/tree"
+import * as personApi from "@/lib/api/person"
 import Image from "next/image"
 import FamilyTreeChart from "./family-tree-chart"
 import PersonSidebar from "./person-sidebar"
@@ -101,10 +102,10 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
       // Fetch tree data
       let treeData: FamilyTreeData
       if (readOnly) {
-        treeData = await api.getPublishedTree(chartId)
+        treeData = await treeApi.getPublishedTree(chartId)
       } else {
         if (!token) throw new Error("Authentication required")
-        treeData = await api.getChartTree(token, chartId)
+        treeData = await treeApi.getChartTree(token, chartId)
       }
       
       // Ensure treeData has valid structure
@@ -139,7 +140,7 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
 
       // Fetch persons list
       if (!readOnly && token) {
-        const personsResponse = await api.getChartPersons(token, chartId)
+        const personsResponse = await personApi.getChartPersons(token, chartId)
         // Handle both direct array and { data: [...] } wrapper
         const personsData = Array.isArray(personsResponse) 
           ? personsResponse 

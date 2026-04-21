@@ -5,7 +5,7 @@ import type React from "react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
-import { api } from "@/lib/api"
+import * as authApi from "@/lib/api/auth"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -24,13 +24,13 @@ export default function LoginForm() {
     setIsLoading(true)
 
     try {
-      const response = await api.login(email, password)
+      const response = await authApi.login(email, password)
       // Assume response has access_token and refresh_token
       const token = response.accessToken || response.token
       const refreshToken = response.refreshToken
 
       // Get user info
-      const userInfo = await api.getMe(token)
+      const userInfo = await authApi.getMe(token)
 
       login(token, refreshToken, {
         id: userInfo.id,

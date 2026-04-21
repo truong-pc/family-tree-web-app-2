@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { api } from "@/lib/api"
+import * as chartApi from "@/lib/api/chart"
 import { Card } from "@/components/ui/card"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -23,7 +23,7 @@ export default function PublishedCharts() {
     const fetchCharts = async () => {
       try {
         console.log("Starting fetch published charts...")
-        const data = await api.getPublishedCharts()
+        const data = await chartApi.getPublishedCharts()
         console.log("Successfully fetched charts:", data)
         setCharts(data || [])
         setError("")

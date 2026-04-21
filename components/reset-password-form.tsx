@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { api } from "@/lib/api"
+import * as authApi from "@/lib/api/auth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -51,7 +51,7 @@ export function ResetPasswordForm() {
     setIsLoadingSendOTP(true)
 
     try {
-      const response = await api.forgotPassword(email)
+      const response = await authApi.forgotPassword(email)
       setSuccessMessage(response.message || "OTP sent to your email")
       setOtpSent(true)
       setCountdown(60) // 60 second countdown
@@ -100,7 +100,7 @@ export function ResetPasswordForm() {
     setIsLoadingReset(true)
 
     try {
-      const response = await api.resetPassword(email, otp, newPassword)
+      const response = await authApi.resetPassword(email, otp, newPassword)
       setSuccessMessage(response.message || "Password reset successfully")
       
       // Redirect to login after 2 seconds

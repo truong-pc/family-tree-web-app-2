@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useAuth } from "@/lib/auth-context"
-import { api } from "@/lib/api"
+import * as authApi from "@/lib/api/auth"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -42,7 +42,7 @@ export function UserProfileDialog({
   const fetchUserData = async () => {
     try {
       setLoading(true)
-      const data = await api.getMe(token!)
+      const data = await authApi.getMe(token!)
       setFormData({
         fullName: data.fullName || "",
         email: data.email || "",
@@ -65,7 +65,7 @@ export function UserProfileDialog({
     e.preventDefault()
     try {
       setLoading(true)
-      await api.updateMe(token!, {
+      await authApi.updateMe(token!, {
         fullName: formData.fullName,
         phone: formData.phone,
         dob: formData.dob,
