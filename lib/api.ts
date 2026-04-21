@@ -55,9 +55,7 @@ apiClient.interceptors.response.use(
                 localStorage.removeItem("refreshToken")
                 localStorage.removeItem("user")
                 alert("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.")
-                setTimeout(() => {
-                  window.location.href = "/login"
-                }, 2000)
+                window.location.href = "/login"
               }
               throw err
             } finally {
