@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DatePicker } from "@/components/ui/date-picker";
 import AddChildModal from "@/components/tree/add-child-modal";
 import { Person, FamilyTreeData } from "@/components/tree/family-tree-view";
 import * as personApi from "@/lib/api/person"
@@ -87,13 +88,13 @@ export default function PersonSidebar({
 
     // Validate level
     if (!editForm.level || editForm.level.trim() === "") {
-      setError("Generation Level is required");
+      setError("Cần nhập đời");
       return;
     }
 
     const levelNum = parseInt(editForm.level);
     if (isNaN(levelNum) || levelNum <= 0) {
-      setError("Generation Level must be a positive number");
+      setError("Đời phải là số nguyên dương");
       return;
     }
 
@@ -101,7 +102,7 @@ export default function PersonSidebar({
     try {
       const token =
         typeof window !== "undefined" ? localStorage.getItem("token") : null;
-      if (!token) throw new Error("Authentication required");
+      if (!token) throw new Error("Yêu cầu đăng nhập");
 
       await personApi.updatePerson(token, chartId, person.personId, {
         name: editForm.name,
@@ -117,7 +118,7 @@ export default function PersonSidebar({
       onDataUpdate(); // Refresh data after successful update
     } catch (error) {
       console.error("Error updating person:", error);
-      setError("Failed to update person. Please try again.");
+      setError("Cập nhật thành viên thất bại. Vui lòng thử lại.");
     } finally {
       setIsSaving(false);
     }
@@ -160,13 +161,13 @@ export default function PersonSidebar({
 
     // Validate file type
     if (!file.type.startsWith("image/")) {
-      setError("Please select an image file");
+      setError("Vui lòng chọn một tệp hình ảnh");
       return;
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      setError("Image size must be less than 5MB");
+      setError("Kích thước ảnh phải nhỏ hơn 5MB");
       return;
     }
 
@@ -206,7 +207,7 @@ export default function PersonSidebar({
       // Update person with new photo URL
       const token =
         typeof window !== "undefined" ? localStorage.getItem("token") : null;
-      if (!token) throw new Error("Authentication required");
+      if (!token) throw new Error("Yêu cầu đăng nhập");
 
       await personApi.updatePerson(token, chartId, person.personId, {
         photoUrl: photoUrl,
@@ -232,7 +233,7 @@ export default function PersonSidebar({
 
   // Remove avatar
   const handleRemoveAvatar = async () => {
-    if (!confirm("Are you sure you want to remove the avatar?")) return;
+    if (!confirm("Bạn có chắc chắn muốn xóa ảnh đại diện?")) return;
 
     // Store old photo URL to delete
     const photoUrlToDelete = person.photoUrl;
@@ -243,7 +244,7 @@ export default function PersonSidebar({
     try {
       const token =
         typeof window !== "undefined" ? localStorage.getItem("token") : null;
-      if (!token) throw new Error("Authentication required");
+      if (!token) throw new Error("Yêu cầu đăng nhập");
 
       await personApi.updatePerson(token, chartId, person.personId, {
         photoUrl: "",
@@ -267,7 +268,7 @@ export default function PersonSidebar({
   const deletePerson = async () => {
     if (
       !confirm(
-        `Are you sure you want to delete ${person.name}? This will also remove all their relationships.`
+        `Bạn có chắc chắn muốn xóa ${person.name}? Thao tác này cũng sẽ xóa tất cả các mối quan hệ của họ.`
       )
     ) {
       return;
@@ -279,7 +280,7 @@ export default function PersonSidebar({
     try {
       const token =
         typeof window !== "undefined" ? localStorage.getItem("token") : null;
-      if (!token) throw new Error("Authentication required");
+      if (!token) throw new Error("Yêu cầu đăng nhập");
 
       await personApi.deletePerson(token, chartId, person.personId);
 
@@ -316,7 +317,7 @@ export default function PersonSidebar({
       >
         <div className="p-6 border-b">
           <div className="flex justify-between items-center">
-            <h2 className="text-xl font-bold">{isEditing ? "Edit Person" : "Person Details"}</h2>
+            <h2 className="text-xl font-bold">{isEditing ? "Chỉnh sửa thành viên" : "Chi tiết thành viên"}</h2>
             <div className="flex items-center space-x-2">
               {!isEditing && (
                 <>
@@ -387,7 +388,7 @@ export default function PersonSidebar({
                 disabled={isUploadingAvatar}
               >
                 <Camera className="h-4 w-4 mr-1" />
-                {!person.photoUrl && "Upload"}
+                {!person.photoUrl && "Tải lên"}
               </Button>
               {person.photoUrl && (
                 <Button
@@ -407,11 +408,11 @@ export default function PersonSidebar({
           <div className="space-y-3">
             <div className="flex items-center space-x-2">
               <User className="h-5 w-5 text-gray-500" />
-              <span className="font-medium">Basic Information</span>
+              <span className="font-medium">Thông tin cơ bản</span>
             </div>
             <div className="pl-7 space-y-2">
               <div>
-                <span className="text-sm text-gray-500">Person ID: </span>
+                <span className="text-sm text-gray-500">ID Thành viên: </span>
                 <span className="font-mono font-medium text-blue-600">
                   {person.personId}
                 </span>
@@ -421,19 +422,19 @@ export default function PersonSidebar({
                 <>
                   {/* Edit Mode */}
                   <div>
-                    <label className="text-sm text-gray-500">Name:</label>
+                    <label className="text-sm text-gray-500">Họ và tên:</label>
                     <Input
                       value={editForm.name}
                       onChange={(e) =>
                         setEditForm({ ...editForm, name: e.target.value })
                       }
                       className="mt-1"
-                      placeholder="Enter name"
+                      placeholder="Nhập tên"
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-sm text-gray-500">Level:</label>
+                      <label className="text-sm text-gray-500">Đời thứ:</label>
                       <Input
                         type="number"
                         value={editForm.level}
@@ -445,7 +446,7 @@ export default function PersonSidebar({
                       />
                     </div>
                     <div>
-                      <label className="text-sm text-gray-500">Gender:</label>
+                      <label className="text-sm text-gray-500">Giới tính:</label>
                       <Select
                         value={editForm.gender}
                         onValueChange={(value: "M" | "F" | "O") =>
@@ -453,45 +454,37 @@ export default function PersonSidebar({
                         }
                       >
                         <SelectTrigger className="mt-1">
-                          <SelectValue placeholder="Select gender" />
+                          <SelectValue placeholder="Chọn giới tính" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="M">Male</SelectItem>
-                          <SelectItem value="F">Female</SelectItem>
-                          <SelectItem value="O">Other</SelectItem>
+                          <SelectItem value="M">Nam</SelectItem>
+                          <SelectItem value="F">Nữ</SelectItem>
+                          <SelectItem value="O">Khác</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
                   <div>
                     <label className="text-sm text-gray-500">
-                      Date of Birth:
+                      Ngày sinh:
                     </label>
-                    <Input
-                      type="date"
-                      value={editForm.dob}
-                      onChange={(e) =>
-                        setEditForm({ ...editForm, dob: e.target.value })
-                      }
-                      className="mt-1"
+                    <DatePicker
+                      date={editForm.dob}
+                      setDate={(val) => setEditForm({...editForm, dob: val})}
                     />
                   </div>
                   <div>
                     <label className="text-sm text-gray-500">
-                      Date of Death:
+                      Ngày mất:
                     </label>
-                    <Input
-                      type="date"
-                      value={editForm.dod}
-                      onChange={(e) =>
-                        setEditForm({ ...editForm, dod: e.target.value })
-                      }
-                      className="mt-1"
+                    <DatePicker
+                      date={editForm.dod}
+                      setDate={(val) => setEditForm({...editForm, dod: val})}
                     />
                   </div>
                   <div>
                     <label className="text-sm text-gray-500">
-                      Description:
+                      Mô tả:
                     </label>
                     <Textarea
                       value={editForm.description}
@@ -502,7 +495,7 @@ export default function PersonSidebar({
                         })
                       }
                       className="mt-1"
-                      placeholder="Enter description"
+                      placeholder="Nhập mô tả"
                       rows={3}
                     />
                   </div>
@@ -513,7 +506,7 @@ export default function PersonSidebar({
                       className="flex-1"
                     >
                       <Save className="h-4 w-4 mr-2" />
-                      {isSaving ? "Saving..." : "Save"}
+                      {isSaving ? "Đang lưu..." : "Lưu"}
                     </Button>
                     <Button
                       variant="outline"
@@ -522,7 +515,7 @@ export default function PersonSidebar({
                       className="flex-1"
                     >
                       <XCircle className="h-4 w-4 mr-2" />
-                      Cancel
+                      Hủy
                     </Button>
                   </div>
                 </>
@@ -530,45 +523,52 @@ export default function PersonSidebar({
                 <>
                   {/* View Mode */}
                   <div>
-                    <span className="text-sm text-gray-500">Level: </span>
+                    <span className="text-sm text-gray-500">Đời thứ: </span>
                     <span className="font-medium text-gray-700">
                       {person.level}
                     </span>
                   </div>
                   <div>
-                    <span className="text-sm text-gray-500">Name:</span>
+                    <span className="text-sm text-gray-500">Họ và tên:</span>
                     <p className="font-medium">{person.name}</p>
                   </div>
                   <div>
-                    <span className="text-sm text-gray-500">Gender:</span>
+                    <span className="text-sm text-gray-500">Giới tính:</span>
                     <Badge variant="secondary" className="ml-2">
                       {person.gender === "M"
-                        ? "Male"
+                        ? "Nam"
                         : person.gender === "F"
-                        ? "Female"
-                        : "Other"}
+                        ? "Nữ"
+                        : "Khác"}
                     </Badge>
                   </div>
                   {person.dob && (
                     <div>
                       <span className="text-sm text-gray-500">
-                        Date of Birth:
+                        Ngày sinh:
                       </span>
-                      <p className="text-sm mt-1">{person.dob}</p>
+                      <p className="text-sm mt-1">{person.dob.split('-').reverse().join('/')}</p>
                     </div>
                   )}
                   {person.dod && (
                     <div>
                       <span className="text-sm text-gray-500">
-                        Date of Death:
+                        Ngày mất:
                       </span>
-                      <p className="text-sm mt-1">{person.dod}</p>
+                      <p className="text-sm mt-1">{person.dod.split('-').reverse().join('/')}</p>
+                      {person.lunarDeathDay != null && person.lunarDeathMonth != null && person.lunarDeathYear != null && (
+                        <p className="text-sm text-gray-600 mt-1">
+                          <span className="text-xs text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">
+                            Âm lịch: {person.lunarDeathDay}/{person.lunarDeathMonth}{person.lunarIsLeap ? " (nhuận)" : ""}/{person.lunarDeathYear}
+                          </span>
+                        </p>
+                      )}
                     </div>
                   )}
                   {person.description && (
                     <div>
                       <span className="text-sm text-gray-500">
-                        Description:
+                        Mô tả:
                       </span>
                       <p className="text-sm mt-1">{person.description}</p>
                     </div>
@@ -582,7 +582,7 @@ export default function PersonSidebar({
           <div className="space-y-3">
             <div className="flex items-center space-x-2">
               <Users className="h-5 w-5 text-gray-500" />
-              <span className="font-medium">Parents ({parents.length})</span>
+              <span className="font-medium">Cha mẹ ({parents.length})</span>
             </div>
             <div className="pl-7">
               {parents.length > 0 ? (
@@ -594,7 +594,7 @@ export default function PersonSidebar({
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-gray-500">No parents recorded</p>
+                <p className="text-sm text-gray-500">Chưa ghi nhận cha mẹ</p>
               )}
             </div>
           </div>
@@ -605,7 +605,7 @@ export default function PersonSidebar({
               <div className="flex items-center space-x-2">
                 <Users className="h-5 w-5 text-gray-500" />
                 <span className="font-medium">
-                  Children ({children.length})
+                  Con cái ({children.length})
                 </span>
               </div>
               <Button
@@ -615,7 +615,7 @@ export default function PersonSidebar({
                 className="text-blue-600 hover:text-blue-700"
               >
                 <Plus className="h-4 w-4 mr-1" />
-                Add Child
+                Thêm con
               </Button>
             </div>
             <div className="pl-7">
@@ -628,7 +628,7 @@ export default function PersonSidebar({
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-gray-500">No children recorded</p>
+                <p className="text-sm text-gray-500">Chưa ghi nhận con cái</p>
               )}
             </div>
           </div>
@@ -645,6 +645,7 @@ export default function PersonSidebar({
           setShowAddChildModal(false);
         }}
         chartId={chartId}
+        familyTreeData={familyTreeData}
       />
     </>
   );

@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { DatePicker } from "@/components/ui/date-picker"
 import * as personApi from "@/lib/api/person"
 interface AddPersonModalProps {
   isOpen: boolean
@@ -43,25 +44,25 @@ export default function AddPersonModal({ isOpen, onClose, onSuccess, chartId }: 
     setError(null)
 
     if (!name.trim()) {
-      setError("Name is required")
+      setError("Cần nhập tên")
       return
     }
 
     if (!level || level.trim() === "") {
-      setError("Generation Level is required")
+      setError("Cần nhập đời")
       return
     }
 
     const levelNum = parseInt(level)
     if (isNaN(levelNum) || levelNum < 1) {
-      setError("Generation Level must be a positive number")
+      setError("Đời phải là một số nguyên dương")
       return
     }
 
     setIsSubmitting(true)
     try {
       const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
-      if (!token) throw new Error("Authentication required")
+      if (!token) throw new Error("Yêu cầu đăng nhập")
 
       const levelNum = parseInt(level)
       await personApi.createPerson(token, chartId, {
@@ -71,7 +72,7 @@ export default function AddPersonModal({ isOpen, onClose, onSuccess, chartId }: 
         dob: dob || null,
         dod: dod || null,
         description: description.trim() || null,
-        parentIds: null,
+        photoUrl: null,
       })
 
       // Reset form
@@ -86,7 +87,7 @@ export default function AddPersonModal({ isOpen, onClose, onSuccess, chartId }: 
       onClose()
     } catch (error: any) {
       console.error("Error creating person:", error)
-      setError(error.response?.data?.message || "Failed to add person. Please try again.")
+      setError(error.response?.data?.message || "Thêm người thất bại. Vui lòng thử lại.")
     } finally {
       setIsSubmitting(false)
     }
@@ -109,9 +110,9 @@ export default function AddPersonModal({ isOpen, onClose, onSuccess, chartId }: 
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Add New Person</DialogTitle>
+          <DialogTitle>Thêm người mới</DialogTitle>
           <DialogDescription>
-            Add a new family member to your tree. Fill in the details below.
+            Thêm một thành viên mới vào cây phả hệ của bạn. Điền thông tin chi tiết bên dưới.
           </DialogDescription>
         </DialogHeader>
 
@@ -123,33 +124,33 @@ export default function AddPersonModal({ isOpen, onClose, onSuccess, chartId }: 
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="name">Name *</Label>
+            <Label htmlFor="name">Họ và tên *</Label>
             <Input
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Enter person's name"
+              placeholder="Nhập tên thành viên"
               disabled={isSubmitting}
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="gender">Gender *</Label>
+              <Label htmlFor="gender">Giới tính *</Label>
               <Select value={gender} onValueChange={(value: "M" | "F" | "O") => setGender(value)} disabled={isSubmitting}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select gender" />
+                  <SelectValue placeholder="Chọn giới tính" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="M">Male</SelectItem>
-                  <SelectItem value="F">Female</SelectItem>
-                  <SelectItem value="O">Other</SelectItem>
+                  <SelectItem value="M">Nam</SelectItem>
+                  <SelectItem value="F">Nữ</SelectItem>
+                  <SelectItem value="O">Khác</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="level">Generation Level *</Label>
+              <Label htmlFor="level">Đời thứ *</Label>
               <Input
                 id="level"
                 type="number"
@@ -163,35 +164,31 @@ export default function AddPersonModal({ isOpen, onClose, onSuccess, chartId }: 
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="dob">Date of Birth</Label>
-              <Input
-                id="dob"
-                type="date"
-                value={dob}
-                onChange={(e) => setDob(e.target.value)}
+              <Label htmlFor="dob">Ngày sinh</Label>
+              <DatePicker
+                date={dob}
+                setDate={setDob}
                 disabled={isSubmitting}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="dod">Date of Death</Label>
-              <Input
-                id="dod"
-                type="date"
-                value={dod}
-                onChange={(e) => setDod(e.target.value)}
+              <Label htmlFor="dod">Ngày mất</Label>
+              <DatePicker
+                date={dod}
+                setDate={setDod}
                 disabled={isSubmitting}
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description">Mô tả</Label>
             <Textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Add any additional information..."
+              placeholder="Thêm thông tin bổ sung..."
               rows={3}
               disabled={isSubmitting}
             />
@@ -199,10 +196,10 @@ export default function AddPersonModal({ isOpen, onClose, onSuccess, chartId }: 
 
           <div className="flex justify-end space-x-2 pt-4">
             <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
-              Cancel
+              Hủy
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Adding..." : "Add Person"}
+              {isSubmitting ? "Đang thêm..." : "Thêm người"}
             </Button>
           </div>
         </form>

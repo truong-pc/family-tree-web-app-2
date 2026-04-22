@@ -25,7 +25,6 @@ export const createPerson = async (
     dob?: string | null; 
     dod?: string | null; 
     description?: string | null; 
-    parentIds?: number[] | null;
     photoUrl?: string | null;
   }
 ) => {
@@ -36,6 +35,59 @@ export const createPerson = async (
     return response.data
   } catch (error) {
     console.error("Create person error:", error)
+    throw error
+  }
+}
+
+export const addChild = async (
+  token: string, 
+  chartId: string, 
+  data: { 
+    name: string; 
+    gender: "M" | "F" | "O"; 
+    level: number; 
+    fatherId?: number | null;
+    motherId?: number | null;
+    childOrder?: number;
+    dob?: string | null; 
+    dod?: string | null; 
+    description?: string | null; 
+    photoUrl?: string | null;
+  }
+) => {
+  try {
+    const response = await apiClient.post(`/api/v1/charts/${chartId}/persons/add-child`, data, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    return response.data
+  } catch (error) {
+    console.error("Add child error:", error)
+    throw error
+  }
+}
+
+export const addSpouse = async (
+  token: string, 
+  chartId: string, 
+  data: { 
+    name: string; 
+    gender: "M" | "F" | "O"; 
+    level: number; 
+    spouseId: number;
+    spouseOrder?: number;
+    dob?: string | null; 
+    dod?: string | null; 
+    description?: string | null; 
+    photoUrl?: string | null;
+  }
+) => {
+  try {
+    const response = await apiClient.post(`/api/v1/charts/${chartId}/persons/add-spouse`, data, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    return response.data
+  } catch (error) {
+    console.error("Add spouse error:", error)
     throw error
   }
 }

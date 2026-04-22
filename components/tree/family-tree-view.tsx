@@ -25,6 +25,10 @@ export interface Person {
   dod?: string | null
   description?: string | null
   photoUrl?: string | null
+  lunarDeathDay?: number | null
+  lunarDeathMonth?: number | null
+  lunarDeathYear?: number | null
+  lunarIsLeap?: boolean | null
 }
 
 export interface FamilyTreeData {
@@ -74,13 +78,17 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
           return
         }
 
-        // Check if any portal content is open (Select, Dropdown, etc.)
-        // If so, the click outside likely just meant to close that portal, not the sidebar
+        // Check if any portal content is open or being clicked (DatePicker, Select, etc.)
         const isPortalOpen = 
-          document.querySelector('[data-slot="select-content"][data-state="open"]') ||
-          document.querySelector('[role="menu"][data-state="open"]')
+          document.querySelector('[data-slot*="content"][data-state="open"]') ||
+          document.querySelector('[role="menu"][data-state="open"]') ||
+          document.querySelector('[role="dialog"][data-state="open"]')
         
-        if (isPortalOpen) {
+        // Also check if the click target itself is inside a portal
+        const isInsidePortal = target.closest('[data-radix-portal]') || 
+                              target.closest('[data-slot*="content"]')
+        
+        if (isPortalOpen || isInsidePortal) {
           return
         }
         
@@ -123,13 +131,14 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
       // Transform nodes to have 'id' field (required by chart component)
       const transformedNodes = rawNodes.map((node: any) => ({
         ...node,
-        id: node.name, // Chart component expects 'id' field
+        id: String(node.id || node.personId), // Use unique numerical ID instead of name
       }))
 
-      // Transform links: convert personId to person names
+      // Transform links: keep personId as string to match node ids
       const transformedLinks = rawLinks.map((link: any) => ({
-        source: personIdToName.get(link.source) || String(link.source),
-        target: personIdToName.get(link.target) || String(link.target),
+        ...link,
+        source: String(link.source),
+        target: String(link.target),
       }))
 
       const validTreeData: FamilyTreeData = {
@@ -151,7 +160,7 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
       } else {
         // In read-only mode, extract people from nodes
         const peopleData: Person[] = rawNodes.map((node: any) => ({
-          personId: node.personId || 0,
+          personId: node.id || node.personId || 0,
           ownerId: node.ownerId || "",
           chartId: chartId,
           name: node.name || "Unknown",
@@ -161,6 +170,10 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
           dod: node.dod || null,
           description: node.desc || node.description || null,
           photoUrl: node.photoUrl || null,
+          lunarDeathDay: node.lunarDeathDay ?? null,
+          lunarDeathMonth: node.lunarDeathMonth ?? null,
+          lunarDeathYear: node.lunarDeathYear ?? null,
+          lunarIsLeap: node.lunarIsLeap ?? null,
         }))
         setPeople(peopleData)
       }
@@ -194,8 +207,8 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
   }
 
   // Handle node click in chart
-  const handleNodeClick = (personName: string) => {
-    const person = people.find((p) => p.name === personName)
+  const handleNodeClick = (personIdStr: string) => {
+    const person = people.find((p) => String(p.personId) === personIdStr)
     if (person) {
       setSelectedPerson(person)
       setSidebarOpen(true)
@@ -204,15 +217,16 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
 
   // Handle search result click
   const handleSearchResultClick = (person: Person) => {
-    setFocusedPerson(person.name)
+    setFocusedPerson(String(person.personId))
     setSearchTerm(person.name)
     setSearchResults([])
   }
 
   // Get person color based on gender and relationships
   const getPersonColor = (person: Person) => {
+    const pidStr = String(person.personId)
     const hasRelationships = familyTreeData.links.some(
-      (link) => link.source === person.name || link.target === person.name
+      (link) => link.source === pidStr || link.target === pidStr
     )
 
     if (!hasRelationships) return "#FEF3C7" // light yellow
@@ -228,7 +242,7 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading family tree...</p>
+          <p className="text-gray-600">Đang tải sơ đồ...</p>
         </div>
       </div>
     )
@@ -241,9 +255,9 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
           <div className="text-red-500 mb-4">
             <Users className="h-16 w-16 mx-auto mb-4" />
           </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Connection Error</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Lỗi kết nối</h2>
           <p className="text-gray-600 mb-4">{error}</p>
-          <Button onClick={fetchData}>Try Again</Button>
+          <Button onClick={fetchData}>Thử lại</Button>
         </div>
       </div>
     )
@@ -259,24 +273,24 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
               <div className="flex items-center space-x-2 sm:space-x-4 w-full sm:w-auto">
                 <Button onClick={() => setShowAddPersonModal(true)} className="flex-1 sm:flex-none">
                   <Plus className="h-4 w-4 mr-1 sm:mr-2" />
-                  <span className="hidden sm:inline">Add Person</span>
-                  <span className="sm:hidden">Add</span>
+                  <span className="hidden sm:inline">Thêm người</span>
+                  <span className="sm:hidden">Thêm</span>
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => setShowAddRelationshipModal(true)}
                   className="flex-1 sm:flex-none"
                 >
-                  <span className="hidden sm:inline">Add Relationship</span>
-                  <span className="sm:hidden">Relation</span>
+                  <span className="hidden sm:inline">Thêm quan hệ</span>
+                  <span className="sm:hidden">Quan hệ</span>
                 </Button>
                 <Button
                   variant="destructive"
                   onClick={() => setShowDelRelationshipModal(true)}
                   className="flex-1 sm:flex-none"
                 >
-                  <span className="hidden sm:inline">Delete Relationship</span>
-                  <span className="sm:hidden">Del Relation</span>
+                  <span className="hidden sm:inline">Xóa quan hệ</span>
+                  <span className="sm:hidden">Xóa</span>
                 </Button>
               </div>
             </div>
@@ -292,7 +306,7 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
             <Card className="mb-2 sm:mb-8 gap-2">
               <CardHeader className="pb-1 sm:pb-3 px-2 sm:px-6 space-y-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg sm:text-xl">Family Tree Visualization</CardTitle>
+                  <CardTitle className="text-lg sm:text-xl">Sơ đồ phả hệ</CardTitle>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -317,7 +331,7 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                   <Input
                     type="text"
-                    placeholder="Search to zoom to person..."
+                    placeholder="Tìm kiếm để zoom đến người đó"
                     value={searchTerm}
                     onChange={(e) => handleSearch(e.target.value)}
                     className="pl-10 pr-10 w-full"
@@ -352,8 +366,8 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
                           <div className="flex-1 min-w-0">
                             <div className="font-medium truncate">{person.name}</div>
                             <div className="text-sm text-gray-500 flex justify-between">
-                              <span>{person.gender === "M" ? "Male" : person.gender === "F" ? "Female" : "Other"}</span>
-                              <span className="text-gray-400">Level {person.level}</span>
+                              <span>{person.gender === "M" ? "Nam" : person.gender === "F" ? "Nữ" : "Khác"}</span>
+                              <span className="text-gray-400">Đời {person.level}</span>
                             </div>
                           </div>
                         </div>
@@ -367,8 +381,8 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
                   data={familyTreeData}
                   onNodeClick={handleNodeClick}
                   focusedPerson={focusedPerson}
-                  getPersonColor={(name: string) => {
-                    const person = people.find((p) => p.name === name)
+                  getPersonColor={(idStr: string) => {
+                    const person = people.find((p) => String(p.personId) === idStr)
                     return person ? getPersonColor(person) : "#F3F4F6"
                   }}
                   onResetZoom={() => {}}
@@ -381,7 +395,7 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
               <CardHeader className="pb-2 sm:pb-6 px-2 sm:px-6">
                 <div className="flex flex-col space-y-2">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg sm:text-xl">Family Members ({people.length})</CardTitle>
+                    <CardTitle className="text-lg sm:text-xl">Thành viên gia đình ({people.length})</CardTitle>
                     <div className="flex items-center space-x-2">
                       <label className="text-sm text-gray-600">Số đời:</label>
                       <div className="relative">
@@ -452,8 +466,8 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-sm sm:text-base truncate" style={{ direction: 'rtl', textAlign: 'left' }}>{person.name}</div>
                         <div className="text-xs sm:text-sm text-gray-600 flex justify-between">
-                          <span>{person.gender === "M" ? "Male" : person.gender === "F" ? "Female" : "Other"}</span>
-                          <span className="text-gray-500">Level {person.level}</span>
+                          <span>{person.gender === "M" ? "Nam" : person.gender === "F" ? "Nữ" : "Khác"}</span>
+                          <span className="text-gray-500">Đời {person.level}</span>
                         </div>
                       </div>
                     </div>
@@ -469,15 +483,15 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
                   <div className="text-center py-8 sm:py-12">
                     <Users className="h-12 w-12 sm:h-16 sm:w-16 text-gray-300 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">
-                      {levelFilter ? `Không có thành viên ở đời ${levelFilter}` : "No family members yet"}
+                      {levelFilter ? `Không có thành viên ở đời ${levelFilter}` : "Chưa có thành viên nào"}
                     </h3>
                     <p className="text-gray-600 mb-4">
-                      {levelFilter ? "Thử nhập số đời khác hoặc xóa bộ lọc." : "Start building your family tree by adding your first person."}
+                      {levelFilter ? "Thử nhập số đời khác hoặc xóa bộ lọc." : "Bắt đầu xây dựng cây phả hệ bằng cách thêm người đầu tiên."}
                     </p>
                     {!readOnly && !levelFilter && (
                       <Button onClick={() => setShowAddPersonModal(true)}>
                         <Plus className="h-4 w-4 mr-2" />
-                        Add First Person
+                        Thêm người đầu tiên
                       </Button>
                     )}
                   </div>

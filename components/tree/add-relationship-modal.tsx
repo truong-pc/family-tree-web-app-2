@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -11,6 +11,13 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import * as treeApi from "@/lib/api/tree"
 import { Person } from "./family-tree-view"
 
@@ -22,6 +29,8 @@ interface AddRelationshipModalProps {
   chartId: string
 }
 
+type RelType = "FATHER" | "MOTHER" | "SPOUSE";
+
 export default function AddRelationshipModal({
   isOpen,
   onClose,
@@ -29,8 +38,10 @@ export default function AddRelationshipModal({
   people,
   chartId,
 }: AddRelationshipModalProps) {
-  const [parentId, setParentId] = useState<string>("")
-  const [childId, setChildId] = useState<string>("")
+  const [relType, setRelType] = useState<RelType>("FATHER")
+  const [id1, setId1] = useState<string>("")
+  const [id2, setId2] = useState<string>("")
+  const [order, setOrder] = useState<number>(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -38,35 +49,45 @@ export default function AddRelationshipModal({
     e.preventDefault()
     setError(null)
 
-    if (!parentId || !childId) {
-      setError("Please select both parent and child")
+    if (!id1 || !id2) {
+      setError("Vui lòng nhập cả hai ID")
       return
     }
 
-    if (parentId === childId) {
-      setError("Parent and child cannot be the same person")
+    if (id1 === id2) {
+      setError("Không thể kết nối một người với chính họ")
       return
     }
 
     setIsSubmitting(true)
     try {
       const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
-      if (!token) throw new Error("Authentication required")
+      if (!token) throw new Error("Yêu cầu đăng nhập")
 
-      await treeApi.createParentChildRelationship(token, chartId, parseInt(parentId), parseInt(childId))
+      const p1 = parseInt(id1)
+      const p2 = parseInt(id2)
+
+      if (relType === "FATHER") {
+        await treeApi.setFather(token, chartId, p1, p2, order)
+      } else if (relType === "MOTHER") {
+        await treeApi.setMother(token, chartId, p1, p2, order)
+      } else if (relType === "SPOUSE") {
+        await treeApi.setSpouse(token, chartId, p1, p2, order)
+      }
 
       // Reset form
-      setParentId("")
-      setChildId("")
+      setId1("")
+      setId2("")
+      setOrder(1)
       
       onSuccess()
       onClose()
     } catch (error: any) {
       console.error("Error creating relationship:", error)
       if (error.response?.status === 404) {
-        setError("ParentId or childId not found")
+        setError("Một trong hai ID đã nhập không tìm thấy")
       } else {
-        setError(error.response?.data?.detail || "Failed to create relationship. Please try again.")
+        setError(error.response?.data?.detail || error.response?.data?.message || "Tạo quan hệ thất bại. Vui lòng thử lại.")
       }
     } finally {
       setIsSubmitting(false)
@@ -75,70 +96,104 @@ export default function AddRelationshipModal({
 
   const handleClose = () => {
     if (!isSubmitting) {
-      setParentId("")
-      setChildId("")
+      setId1("")
+      setId2("")
+      setOrder(1)
       setError(null)
       onClose()
     }
+  }
+
+  const labels = {
+    FATHER: { p1: "ID Cha", p2: "ID Con", order: "Thứ tự sinh" },
+    MOTHER: { p1: "ID Mẹ", p2: "ID Con", order: "Thứ tự sinh" },
+    SPOUSE: { p1: "ID Người 1", p2: "ID Người 2", order: "Thứ tự vợ/chồng" },
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Add Relationship</DialogTitle>
+          <DialogTitle>Thêm quan hệ</DialogTitle>
           <DialogDescription>
-            Create a parent-child relationship between two existing family members.
+            Tạo mối quan hệ giữa hai thành viên hiện có bằng ID của họ.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
               {error}
             </div>
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="parent">Parent ID *</Label>
-            <Input
-              id="parent"
-              type="text"
-              value={parentId}
-              onChange={(e) => setParentId(e.target.value)}
-              placeholder="Enter parent's person ID"
-              disabled={isSubmitting}
-            />
-            <p className="text-xs text-gray-500">Enter the Person ID of the parent</p>
+            <Label>Loại quan hệ</Label>
+            <Select value={relType} onValueChange={(val: RelType) => setRelType(val)} disabled={isSubmitting}>
+              <SelectTrigger>
+                <SelectValue placeholder="Chọn loại" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="FATHER">Cha (P1 là Cha của P2)</SelectItem>
+                <SelectItem value="MOTHER">Mẹ (P1 là Mẹ của P2)</SelectItem>
+                <SelectItem value="SPOUSE">Vợ/Chồng (P1 và P2 là Vợ/Chồng)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="p1">{labels[relType].p1} *</Label>
+              <Input
+                id="p1"
+                type="text"
+                value={id1}
+                onChange={(e) => setId1(e.target.value)}
+                placeholder="ID Thành viên"
+                disabled={isSubmitting}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="p2">{labels[relType].p2} *</Label>
+              <Input
+                id="p2"
+                type="text"
+                value={id2}
+                onChange={(e) => setId2(e.target.value)}
+                placeholder="ID Thành viên"
+                disabled={isSubmitting}
+                required
+              />
+            </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="child">Child ID *</Label>
+            <Label htmlFor="order">{labels[relType].order}</Label>
             <Input
-              id="child"
-              type="text"
-              value={childId}
-              onChange={(e) => setChildId(e.target.value)}
-              placeholder="Enter child's person ID"
+              id="order"
+              type="number"
+              min="1"
+              value={order}
+              onChange={(e) => setOrder(parseInt(e.target.value) || 1)}
               disabled={isSubmitting}
             />
-            <p className="text-xs text-gray-500">Enter the Person ID of the child</p>
           </div>
 
-          <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded text-sm">
-            <p className="font-medium mb-1">Note:</p>
+          <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded text-sm mt-4">
+            <p className="font-medium mb-1">Lưu ý:</p>
             <p>
-              This will create a parent-child relationship where the selected parent will be connected to the selected
-              child in the family tree.
+              Vui lòng nhập đúng ID của cả hai người. Bạn có thể tìm thấy ID trong thanh bên khi nhấn vào một người trên sơ đồ.
             </p>
           </div>
 
           <div className="flex justify-end space-x-2 pt-4">
             <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
-              Cancel
+              Hủy
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Creating..." : "Create Relationship"}
+              {isSubmitting ? "Đang tạo..." : "Tạo quan hệ"}
             </Button>
           </div>
         </form>

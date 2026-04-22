@@ -25,10 +25,10 @@ interface TreeNode {
   parent?: TreeNode
   x: number
   y: number
-  width: number // Width needed for this subtree
+  width: number
+  blockWidth: number
 }
 
-// Store zoom transform outside component to persist across re-renders
 let savedTransform: d3.ZoomTransform | null = null
 let initialTransform: d3.ZoomTransform | null = null
 
@@ -36,45 +36,34 @@ export default function FamilyTreeChart({ data, onNodeClick, focusedPerson, getP
   const svgRef = useRef<SVGSVGElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const zoomRef = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null)
-  const [dimensions, setDimensions] = useState({ width: 800, height:600 })
+  const [dimensions, setDimensions] = useState({ width: 800, height: 600 })
   const isInitialRender = useRef(true)
 
-  // Expose reset zoom function to parent
   useEffect(() => {
     if (onResetZoom) {
-      // Make handleResetZoom available to parent
       const resetFunc = () => {
         if (!svgRef.current || !zoomRef.current || !initialTransform) return
         const svg = d3.select(svgRef.current)
         svg.transition().duration(750).call(zoomRef.current.transform, initialTransform)
         savedTransform = initialTransform
       }
-      // Store it in a way parent can access
       ;(window as any).familyTreeResetZoom = resetFunc
     }
   }, [onResetZoom])
 
-  // Update canvas size based on container
   useEffect(() => {
     const updateDimensions = () => {
       if (containerRef.current) {
         const containerWidth = containerRef.current.offsetWidth
         const containerHeight = Math.max(500, window.innerHeight * 0.6)
-
         setDimensions({
           width: Math.max(500, containerWidth - 40),
           height: containerHeight,
         })
       }
     }
-
-    // Initial size
     updateDimensions()
-
-    // Listen for window resize
     window.addEventListener("resize", updateDimensions)
-
-    // Cleanup
     return () => window.removeEventListener("resize", updateDimensions)
   }, [])
 
@@ -86,13 +75,10 @@ export default function FamilyTreeChart({ data, onNodeClick, focusedPerson, getP
 
     const { width, height } = dimensions
     const margin = { top: 40, right: 40, bottom: 40, left: 40 }
-
     svg.attr("width", width).attr("height", height)
 
-    // Add arrow marker definition
     const defs = svg.append("defs")
-    defs
-      .append("marker")
+    defs.append("marker")
       .attr("id", "arrowhead")
       .attr("viewBox", "0 -5 10 10")
       .attr("refX", 10)
@@ -104,82 +90,120 @@ export default function FamilyTreeChart({ data, onNodeClick, focusedPerson, getP
       .attr("d", "M0,-5L10,0L0,5")
       .attr("fill", "#666")
 
+    defs.append("clipPath")
+      .attr("id", "avatar-clip")
+      .attr("clipPathUnits", "objectBoundingBox")
+      .append("circle")
+      .attr("cx", 0.5)
+      .attr("cy", 0.5)
+      .attr("r", 0.5)
+
     const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`)
 
-    // Node dimensions - responsive based on screen size
-    const nodeWidth = width < 1024 ? 120 : 130
+    const baseNodeWidth = width < 1024 ? 120 : 130
     const nodeHeight = width < 1024 ? 70 : 80
     const avatarSize = width < 1024 ? 32 : 40
     const minNodeSpacing = width < 768 ? 15 : 20
     const levelHeight = width < 768 ? 110 : 140
 
-    // Avatar positioning
-    const avatarX = (nodeWidth - avatarSize) / 2
     const avatarY = width < 768 ? 8 : 10
 
-    // Create hierarchical structure
     const nodeMap = new Map()
     data.nodes.forEach((node) => {
-      nodeMap.set(node.id, { ...node, children: [], parents: [] })
+      nodeMap.set(node.id, { ...node, children: [], parents: [], spouses: [], isPrimary: true, isIsolated: true })
     })
 
-    // Build parent-child relationships
+    // 1st Pass: Parents
     data.links.forEach((link) => {
+      if (link.type === "SPOUSE_OF") return;
       const parent = nodeMap.get(link.source)
       const child = nodeMap.get(link.target)
       if (parent && child) {
         parent.children.push(child)
         child.parents.push(parent)
+        parent.isIsolated = false
+        child.isIsolated = false
       }
     })
 
-    // Find root nodes (nodes with no parents)
-    const roots = Array.from(nodeMap.values()).filter((node: any) => node.parents.length === 0)
+    // 2nd Pass: Spouses
+    data.links.forEach((link) => {
+      // Must be SPOUSE_OF or we assume otherwise
+      if (link.type !== "SPOUSE_OF") return;
+      const s1 = nodeMap.get(link.source)
+      const s2 = nodeMap.get(link.target)
+      if (s1 && s2) {
+        s1.isIsolated = false
+        s2.isIsolated = false
+        let primary = s1
+        let secondary = s2
+
+        // Keep node with parents as primary
+        if (s2.parents.length > 0 && s1.parents.length === 0) {
+          primary = s2; secondary = s1;
+        } else if (s1.isPrimary === false && s2.isPrimary === true) {
+          primary = s2; secondary = s1;
+        }
+
+        if (secondary.isPrimary) {
+          secondary.isPrimary = false
+          primary.spouses.push(secondary)
+          // merge children
+          secondary.children.forEach((c: any) => {
+            if (!primary.children.includes(c)) {
+              primary.children.push(c);
+              // Also update child's parents array
+              if (!c.parents.includes(primary)) {
+                c.parents.push(primary);
+              }
+            }
+          })
+        }
+      }
+    })
+
+    const roots = Array.from(nodeMap.values()).filter((node: any) => node.parents.length === 0 && node.isPrimary && !node.isIsolated)
+    const isolatedNodes = Array.from(nodeMap.values()).filter((node: any) => node.isIsolated && node.isPrimary)
 
     const allNodes: TreeNode[] = []
     const allLinks: any[] = []
 
-    // Separate isolated nodes (nodes with no relationships) from connected nodes
-    const isolatedNodes = Array.from(nodeMap.values()).filter(
-      (node: any) => node.children.length === 0 && node.parents.length === 0
-    )
+    function getBlockWidth(node: any) {
+      const totalPeople = 1 + node.spouses.length
+      return baseNodeWidth * totalPeople + (totalPeople - 1) * 10
+    }
 
-    // Constants for isolated nodes column
-    const isolatedColumnWidth = nodeWidth + 40
+    const isolatedColumnWidth = baseNodeWidth + 40
     const isolatedColumnX = -(width - margin.left - margin.right) / 2 + isolatedColumnWidth / 2
     const isolatedStartY = 60
     const isolatedVerticalSpacing = nodeHeight + 15
 
-    // Position isolated nodes in a vertical column on the left
     isolatedNodes.forEach((node: any, index) => {
+      const bW = getBlockWidth(node)
       const treeNode: TreeNode = {
         id: node.id,
         data: node,
         children: [],
         x: isolatedColumnX,
         y: isolatedStartY + index * isolatedVerticalSpacing,
-        width: nodeWidth,
+        width: bW,
+        blockWidth: bW
       }
       allNodes.push(treeNode)
     })
 
-    // Function to calculate subtree width
     function calculateSubtreeWidth(node: any): number {
-      if (node.children.length === 0) {
-        return nodeWidth + minNodeSpacing
-      }
+      const blockW = getBlockWidth(node)
+      if (node.children.length === 0) return blockW + minNodeSpacing
 
-      // Calculate total width needed for all children
       const childrenWidth = node.children.reduce((total: number, child: any) => {
         return total + calculateSubtreeWidth(child)
       }, 0)
-
-      // Return the maximum of node width or children width
-      return Math.max(nodeWidth + minNodeSpacing, childrenWidth)
+      return Math.max(blockW + minNodeSpacing, childrenWidth)
     }
 
-    // Function to position nodes in a subtree
     function positionSubtree(node: any, x: number, y: number, availableWidth: number): TreeNode {
+      const bW = getBlockWidth(node)
       const treeNode: TreeNode = {
         id: node.id,
         data: node,
@@ -187,10 +211,10 @@ export default function FamilyTreeChart({ data, onNodeClick, focusedPerson, getP
         x: x,
         y: y,
         width: calculateSubtreeWidth(node),
+        blockWidth: bW
       }
 
       if (node.children.length > 0) {
-        // Calculate positions for children
         let childX = x - treeNode.width / 2
 
         node.children.forEach((child: any) => {
@@ -199,14 +223,12 @@ export default function FamilyTreeChart({ data, onNodeClick, focusedPerson, getP
           treeNode.children.push(childTreeNode)
           childX += childWidth
 
-          // Add link from parent to child
           allLinks.push({
             source: treeNode,
             target: childTreeNode,
           })
         })
 
-        // Center parent over children
         if (treeNode.children.length > 0) {
           const firstChild = treeNode.children[0]
           const lastChild = treeNode.children[treeNode.children.length - 1]
@@ -218,40 +240,26 @@ export default function FamilyTreeChart({ data, onNodeClick, focusedPerson, getP
       return treeNode
     }
 
-    // Process connected nodes (excluding isolated nodes)
-    const rootsWithRelationships = roots.filter((root: any) => root.children.length > 0 || root.parents.length > 0)
-
-    if (rootsWithRelationships.length > 0) {
+    if (roots.length > 0) {
       let totalRootWidth = 0
       const rootWidths: number[] = []
-
-      // Calculate width needed for each root tree
-      rootsWithRelationships.forEach((root: any) => {
-        const rootWidth = calculateSubtreeWidth(root)
-        rootWidths.push(rootWidth)
-        totalRootWidth += rootWidth
+      roots.forEach((root: any) => {
+        const rootW = calculateSubtreeWidth(root)
+        rootWidths.push(rootW)
+        totalRootWidth += rootW
       })
 
-      // Calculate the starting X position for the main tree
       const mainTreeStartX = isolatedColumnWidth + 50 - totalRootWidth / 2
-      
-      // Position each root tree in the main area
       let currentX = mainTreeStartX
-      rootsWithRelationships.forEach((root: any, index: number) => {
-        const rootWidth = rootWidths[index]
-        positionSubtree(root, currentX + rootWidth / 2, 60, rootWidth)
-        currentX += rootWidth
+      roots.forEach((root: any, index: number) => {
+        const rw = rootWidths[index]
+        positionSubtree(root, currentX + rw / 2, 60, rw)
+        currentX += rw
       })
     }
 
-    // Create links with proper elbow connections
-    const link = g
-      .append("g")
-      .selectAll("path")
-      .data(allLinks)
-      .enter()
-      .append("path")
-      .attr("stroke", "#666")
+    const linkPaths = g.append("g").selectAll("path").data(allLinks).enter().append("path")
+      .attr("stroke", "#323232ff")
       .attr("stroke-opacity", 0.8)
       .attr("stroke-width", 2)
       .attr("fill", "none")
@@ -261,193 +269,139 @@ export default function FamilyTreeChart({ data, onNodeClick, focusedPerson, getP
         const sourceY = d.source.y + nodeHeight / 2
         const targetX = d.target.x
         const targetY = d.target.y - nodeHeight / 2 
-
         const midY = sourceY + (targetY - sourceY) / 2
-
         return `M${sourceX},${sourceY} L${sourceX},${midY} L${targetX},${midY} L${targetX},${targetY}`
       })
 
-    // Add clip path for circular avatars
-    allNodes.forEach((node: TreeNode, index: number) => {
-      defs
-        .append("clipPath")
-        .attr("id", `avatar-clip-${index}`)
-        .append("circle")
-        .attr("cx", avatarX + avatarSize / 2)
-        .attr("cy", avatarY + avatarSize / 2)
-        .attr("r", avatarSize / 2)
-    })
+    const nodeGroups = g.append("g").selectAll("g").data(allNodes).enter().append("g")
+      .attr("transform", (d: TreeNode) => `translate(${d.x - d.blockWidth / 2}, ${d.y - nodeHeight / 2})`)
+      .style("cursor", "default")
 
-    // Create node groups for better organization
-    const nodeGroups = g
-      .append("g")
-      .selectAll("g")
-      .data(allNodes)
-      .enter()
-      .append("g")
-      .attr("transform", (d: TreeNode) => `translate(${d.x - nodeWidth / 2}, ${d.y - nodeHeight / 2})`)
-      .style("cursor", "pointer")
-
-    // Add rectangular backgrounds
-    nodeGroups
-      .append("rect")
-      .attr("width", nodeWidth)
+    // The grouped frame
+    nodeGroups.append("rect")
+      .attr("width", (d: TreeNode) => d.blockWidth)
       .attr("height", nodeHeight)
       .attr("rx", 12)
       .attr("ry", 12)
-      .attr("fill", (d: TreeNode) => getPersonColor(d.data.id))
-      .attr("stroke", "#fff")
-      .attr("stroke-width", 2)
-      // .attr("filter", "drop-shadow(0px 2px 4px rgba(0,0,0,0.1))") // Optional shadow
+      .attr("fill", "#f8fafc")
+      .attr("stroke", "#e2e8f0")
+      .attr("stroke-width", 1)
 
-    // Add avatar images
-    nodeGroups.each(function(d: TreeNode, index: number) {
-      const group = d3.select(this)
-      const photoUrl = d.data.photoUrl || "/placeholder-user.jpg"
-      
-      // Add circular border for avatar
-      group
-        .append("circle")
-        .attr("cx", nodeWidth / 2)
-        .attr("cy", avatarY + avatarSize / 2)
-        .attr("r", avatarSize / 2 + 2)
-        .attr("fill", "#fff")
-        .attr("stroke", "#e5e7eb")
-        .attr("stroke-width", 2)
-
-      // Add avatar image with clip path
-      group
-        .append("image")
-        .attr("x", avatarX)
-        .attr("y", avatarY)
-        .attr("width", avatarSize)
-        .attr("height", avatarSize)
-        .attr("href", photoUrl)
-        .attr("clip-path", `url(#avatar-clip-${index})`)
-        .attr("preserveAspectRatio", "xMidYMid slice")
-        .on("error", function() {
-          // Fallback to placeholder if image fails to load
-          d3.select(this).attr("href", "/placeholder-user.jpg")
-        })
-    })
-
-    // Add labels with responsive font size - positioned below avatar
     const fontSize = width < 768 ? "10px" : "12px"
     const maxNameLength = width < 768 ? 15 : 18
-    
-    // Position text relative to avatar for consistent spacing
     const textY = avatarY + avatarSize + (width < 768 ? 15 : 20)
 
-    nodeGroups
-      .append("text")
-      .text((d: TreeNode) => {
-        const name = d.data.id || d.data.name || "Unknown"
-        return name.length > maxNameLength ? name.substring(0, maxNameLength - 3) + "..." : name
-      })
-      .attr("font-size", fontSize)
-      .attr("text-anchor", "middle")
-      .attr("x", nodeWidth / 2)
-      .attr("y", textY)
-      .style("pointer-events", "none")
-      .style("font-weight", "600")
-      .attr("fill", "#1f2937") // Text color
+    nodeGroups.each(function(d: TreeNode) {
+      const group = d3.select(this)
+      const people = [d.data, ...d.data.spouses]
+      
+      people.forEach((person, pIndex) => {
+        const pX = pIndex * (baseNodeWidth + 10)
+        
+        group.append("rect")
+           .attr("x", pX)
+           .attr("y", 0)
+           .attr("width", baseNodeWidth)
+           .attr("height", nodeHeight)
+           .attr("rx", 12)
+           .attr("ry", 12)
+           .attr("fill", getPersonColor(person.id))
+           .attr("stroke", focusedPerson === person.id ? "#ff6b6b" : "none")
+           .attr("stroke-width", focusedPerson === person.id ? 3 : 0)
+           .style("cursor", "pointer")
+           .on("click", (event) => {
+             event.stopPropagation()
+             onNodeClick(person.id)
+           })
 
-    // Handle node clicks
-    nodeGroups.on("click", (event, d: TreeNode) => {
-      onNodeClick(d.data.id)
+        const cPhotoUrl = person.photoUrl || "/placeholder-user.jpg"
+        
+        group.append("circle")
+           .attr("cx", pX + baseNodeWidth / 2)
+           .attr("cy", avatarY + avatarSize / 2)
+           .attr("r", avatarSize / 2 + 2)
+           .attr("fill", "#fff")
+           .attr("stroke", "#e5e7eb")
+           .attr("stroke-width", 2)
+           .style("pointer-events", "none")
+
+        group.append("image")
+           .attr("x", pX + baseNodeWidth / 2 - avatarSize / 2)
+           .attr("y", avatarY)
+           .attr("width", avatarSize)
+           .attr("height", avatarSize)
+           .attr("href", cPhotoUrl)
+           .attr("clip-path", `url(#avatar-clip)`)
+           .attr("preserveAspectRatio", "xMidYMid slice")
+           .style("pointer-events", "none")
+           .on("error", function() {
+              d3.select(this).attr("href", "/placeholder-user.jpg")
+           })
+
+        const pName = person.name || "Unknown"
+        const displayName = pName.length > maxNameLength ? "..." + pName.substring(pName.length - (maxNameLength - 3)) : pName
+
+        group.append("text")
+           .text(displayName)
+           .attr("font-size", fontSize)
+           .attr("text-anchor", "middle")
+           .attr("x", pX + baseNodeWidth / 2)
+           .attr("y", textY)
+           .style("pointer-events", "none")
+           .style("font-weight", "600")
+           .attr("fill", "#1f2937")
+      })
     })
 
-    // Highlight focused person
-    if (focusedPerson) {
-      nodeGroups.select("rect")
-        .attr("stroke", function(this: any) {
-          const d = d3.select(this.parentNode).datum() as TreeNode
-          return d.data.id === focusedPerson ? "#ff6b6b" : "#fff"
-        })
-        .attr("stroke-width", function(this: any) {
-          const d = d3.select(this.parentNode).datum() as TreeNode
-          return d.data.id === focusedPerson ? 4 : 2
-        })
-    }
-
-    // Store nodes for later access
-    const allNodesWithPositions = allNodes
-
-    // Add zoom and pan functionality
-    const zoom = d3
-      .zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.1, 3])
-      .on("zoom", (event) => {
-        g.attr("transform", event.transform)
-        savedTransform = event.transform
-      })
+    const zoom = d3.zoom<SVGSVGElement, unknown>().scaleExtent([0.1, 3]).on("zoom", (event) => {
+      g.attr("transform", event.transform)
+      savedTransform = event.transform
+    })
 
     zoomRef.current = zoom
     svg.call(zoom)
 
-    // Auto-fit to show all nodes (only on initial render)
     if (allNodes.length > 0) {
       const xExtent = d3.extent(allNodes, (d: TreeNode) => d.x) as [number, number]
       const yExtent = d3.extent(allNodes, (d: TreeNode) => d.y) as [number, number]
 
-      const dx = xExtent[1] - xExtent[0] + nodeWidth + 100
+      const dx = xExtent[1] - xExtent[0] + baseNodeWidth + 100
       const dy = yExtent[1] - yExtent[0] + nodeHeight + 100
-
       const scale = Math.min((width - margin.left - margin.right) / dx, (height - margin.top - margin.bottom) / dy, 0.8)
-
       const centerX = (xExtent[0] + xExtent[1]) / 2
       const centerY = (yExtent[0] + yExtent[1]) / 2
 
-      const defaultTransform = d3.zoomIdentity
-        .translate(width / 2, height / 2)
-        .scale(scale)
-        .translate(-centerX, -centerY)
+      const defaultTransform = d3.zoomIdentity.translate(width / 2, height / 2).scale(scale).translate(-centerX, -centerY)
 
-      // Save initial transform for reset button
       if (isInitialRender.current) {
         initialTransform = defaultTransform
         savedTransform = defaultTransform
         svg.call(zoom.transform, defaultTransform)
         isInitialRender.current = false
       } else if (savedTransform) {
-        // Restore saved transform
         svg.call(zoom.transform, savedTransform)
       } else {
         svg.call(zoom.transform, defaultTransform)
       }
     }
 
-    // Highlight focused person and zoom to them if specified
     if (focusedPerson) {
-      nodeGroups.select("rect")
-        .attr("stroke", function(this: any) {
-          const d = d3.select(this.parentNode).datum() as TreeNode
-          return d.data.id === focusedPerson ? "#ff6b6b" : "#fff"
-        })
-        .attr("stroke-width", function(this: any) {
-          const d = d3.select(this.parentNode).datum() as TreeNode
-          return d.data.id === focusedPerson ? 4 : 2
-        })
-
-      // Zoom to focused person
-      const focusedNode = allNodesWithPositions.find((n: TreeNode) => n.data.id === focusedPerson)
+      const focusedNode = allNodes.find((n: TreeNode) => n.data.id === focusedPerson || n.data.spouses.some((s: any) => s.id === focusedPerson))
       if (focusedNode) {
+        // Find specific person offset if needed
+        const pIndex = [focusedNode.data, ...focusedNode.data.spouses].findIndex((p: any) => p.id === focusedPerson);
+        const pOffsetX = pIndex >= 0 ? pIndex * (baseNodeWidth + 10) + baseNodeWidth / 2 - focusedNode.blockWidth / 2 : 0;
+        
         const transform = d3.zoomIdentity
           .translate(width / 2, height / 2)
           .scale(1.2)
-          .translate(-focusedNode.x, -focusedNode.y)
-        
-        svg
-          .transition()
-          .duration(750)
-          .call(zoom.transform, transform)
-        
+          .translate(-(focusedNode.x + pOffsetX), -focusedNode.y)
+        svg.transition().duration(750).call(zoom.transform, transform)
         savedTransform = transform
       }
     }
   }, [data, focusedPerson, getPersonColor, onNodeClick, dimensions])
 
-  // Reset zoom function
   const handleResetZoom = useCallback(() => {
     if (!svgRef.current || !zoomRef.current || !initialTransform) return
     const svg = d3.select(svgRef.current)
@@ -461,15 +415,15 @@ export default function FamilyTreeChart({ data, onNodeClick, focusedPerson, getP
       <div className="mt-2 text-xs sm:text-sm text-gray-600 flex items-center justify-center space-x-2 sm:space-x-4 flex-wrap">
         <div className="flex items-center space-x-1">
           <div className="w-4 h-4 rounded" style={{ backgroundColor: "#DBEAFE" }}></div>
-          <span>Male</span>
+          <span>Nam</span>
         </div>
         <div className="flex items-center space-x-1">
           <div className="w-4 h-4 rounded" style={{ backgroundColor: "#FCE7F3" }}></div>
-          <span>Female</span>
+          <span>Nữ</span>
         </div>
         <div className="flex items-center space-x-1">
           <div className="w-4 h-4 rounded" style={{ backgroundColor: "#FEF3C7" }}></div>
-          <span>No relationships</span>
+          <span>Chưa có quan hệ</span>
         </div>
       </div>
     </div>
