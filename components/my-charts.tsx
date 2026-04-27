@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useAuth } from "@/lib/auth-context"
+import { useAuthStore } from "@/lib/stores/auth-store"
 import * as chartApi from "@/lib/api/chart"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -14,7 +14,7 @@ interface Chart {
 }
 
 export default function MyCharts() {
-  const { token } = useAuth()
+  const { token } = useAuthStore()
   const [charts, setCharts] = useState<Chart[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState("")

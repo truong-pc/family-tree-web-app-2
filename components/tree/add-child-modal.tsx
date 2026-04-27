@@ -21,7 +21,9 @@ import {
 } from "@/components/ui/select"
 import { DatePicker } from "@/components/ui/date-picker"
 import * as personApi from "@/lib/api/person"
-import { Person, FamilyTreeData } from "./family-tree-view"
+import { useFamilyTreeStore } from "@/lib/stores/family-tree-store"
+import { useAuthStore } from "@/lib/stores/auth-store"
+import type { Person } from "@/lib/stores/family-tree-store"
 
 interface AddChildModalProps {
   isOpen: boolean
@@ -29,10 +31,11 @@ interface AddChildModalProps {
   parent: Person
   onSuccess: () => void
   chartId: string
-  familyTreeData?: FamilyTreeData
 }
 
-export default function AddChildModal({ isOpen, onClose, parent, onSuccess, chartId, familyTreeData }: AddChildModalProps) {
+export default function AddChildModal({ isOpen, onClose, parent, onSuccess, chartId }: AddChildModalProps) {
+  const { familyTreeData } = useFamilyTreeStore()
+
   const [name, setName] = useState("")
   const [gender, setGender] = useState<"M" | "F" | "O">("M")
   const [dob, setDob] = useState("")
@@ -78,7 +81,7 @@ export default function AddChildModal({ isOpen, onClose, parent, onSuccess, char
 
     setIsSubmitting(true)
     try {
-      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
+      const token = useAuthStore.getState().token
       if (!token) throw new Error("Yêu cầu đăng nhập")
 
       let fatherId: number | null = null

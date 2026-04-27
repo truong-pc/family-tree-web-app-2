@@ -19,25 +19,18 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import * as treeApi from "@/lib/api/tree"
-import { Person } from "./family-tree-view"
+import { useFamilyTreeStore } from "@/lib/stores/family-tree-store"
+import { useAuthStore } from "@/lib/stores/auth-store"
 
 interface DelRelationshipModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onSuccess: () => void
-  people: Person[]
   chartId: string
 }
 
 type RelType = "FATHER" | "MOTHER" | "SPOUSE";
 
-export default function DelRelationshipModal({
-  isOpen,
-  onClose,
-  onSuccess,
-  people,
-  chartId,
-}: DelRelationshipModalProps) {
+export default function DelRelationshipModal({ chartId }: DelRelationshipModalProps) {
+  const { showDelRelationshipModal: isOpen, toggleModal, fetchData } = useFamilyTreeStore()
+
   const [relType, setRelType] = useState<RelType>("FATHER")
   const [id1, setId1] = useState<string>("")
   const [id2, setId2] = useState<string>("")
@@ -68,7 +61,7 @@ export default function DelRelationshipModal({
     setIsSubmitting(true)
     
     try {
-      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
+      const token = useAuthStore.getState().token
       if (!token) throw new Error("Yêu cầu đăng nhập")
 
       const p1 = parseInt(id1)
@@ -86,8 +79,8 @@ export default function DelRelationshipModal({
       setId1("")
       setId2("")
       
-      onSuccess()
-      onClose()
+      fetchData(chartId, false)
+      toggleModal("delRelationship", false)
     } catch (error: any) {
       console.error("Error deleting relationship:", error)
       if (error.response?.status === 404) {
@@ -105,7 +98,7 @@ export default function DelRelationshipModal({
       setId1("")
       setId2("")
       setError(null)
-      onClose()
+      toggleModal("delRelationship", false)
     }
   }
 

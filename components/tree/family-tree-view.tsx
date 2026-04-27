@@ -1,40 +1,21 @@
 "use client"
 
-import React, { useState, useEffect, useRef } from "react"
-import { Search, Plus, X, Users, ArrowUpDown } from "lucide-react"
+import React, { useEffect, useRef } from "react"
+import { Search, Plus, X, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import * as treeApi from "@/lib/api/tree"
-import * as personApi from "@/lib/api/person"
 import Image from "next/image"
 import FamilyTreeChart from "./family-tree-chart"
 import PersonSidebar from "./person-sidebar"
 import AddPersonModal from "./add-person-modal"
 import AddRelationshipModal from "./add-relationship-modal"
 import DelRelationshipModal from "./del-relationship-modal"
+import { useFamilyTreeStore } from "@/lib/stores/family-tree-store"
+import type { Person } from "@/lib/stores/family-tree-store"
 
-export interface Person {
-  personId: number
-  ownerId: string
-  chartId: string
-  name: string
-  gender: "M" | "F" | "O"
-  level: number
-  dob?: string | null
-  dod?: string | null
-  description?: string | null
-  photoUrl?: string | null
-  lunarDeathDay?: number | null
-  lunarDeathMonth?: number | null
-  lunarDeathYear?: number | null
-  lunarIsLeap?: boolean | null
-}
-
-export interface FamilyTreeData {
-  nodes: Array<{ id: string; gender: string; [key: string]: any }>
-  links: Array<{ source: string; target: string; [key: string]: any }>
-}
+// Re-export types for backward compatibility
+export type { Person, FamilyTreeData } from "@/lib/stores/family-tree-store"
 
 interface FamilyTreeViewProps {
   chartId: string
@@ -42,30 +23,32 @@ interface FamilyTreeViewProps {
 }
 
 export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTreeViewProps) {
-  const [people, setPeople] = useState<Person[]>([])
-  const [familyTreeData, setFamilyTreeData] = useState<FamilyTreeData>({ nodes: [], links: [] })
-  const [searchTerm, setSearchTerm] = useState("")
-  const [searchResults, setSearchResults] = useState<Person[]>([])
-  const [selectedPerson, setSelectedPerson] = useState<Person | null>(null)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [showAddPersonModal, setShowAddPersonModal] = useState(false)
-  const [showAddRelationshipModal, setShowAddRelationshipModal] = useState(false)
-  const [showDelRelationshipModal, setShowDelRelationshipModal] = useState(false)
-  const [focusedPerson, setFocusedPerson] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [levelFilter, setLevelFilter] = useState<string>("")
-  const sidebarRef = useRef<HTMLDivElement>(null)
+  const {
+    people,
+    familyTreeData,
+    searchTerm,
+    searchResults,
+    selectedPerson,
+    sidebarOpen,
+    focusedPerson,
+    loading,
+    error,
+    levelFilter,
+    showAddPersonModal,
+    showAddRelationshipModal,
+    showDelRelationshipModal,
+    fetchData,
+    handleSearch,
+    clearSearch,
+    selectPerson,
+    openSidebar,
+    closeSidebar,
+    toggleModal,
+    setFocusedPerson,
+    setLevelFilter,
+  } = useFamilyTreeStore()
 
-  // Update selectedPerson when people data changes (to reflect edits)
-  useEffect(() => {
-    if (selectedPerson && people.length > 0) {
-      const updatedPerson = people.find(p => p.personId === selectedPerson.personId)
-      if (updatedPerson) {
-        setSelectedPerson(updatedPerson)
-      }
-    }
-  }, [people])
+  const sidebarRef = useRef<HTMLDivElement>(null)
 
   // Handle click outside sidebar to close it
   useEffect(() => {
@@ -92,134 +75,27 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
           return
         }
         
-        setSidebarOpen(false)
+        closeSidebar()
       }
     }
 
     document.addEventListener('pointerdown', handleClickOutside)
     return () => document.removeEventListener('pointerdown', handleClickOutside)
-  }, [sidebarOpen])
-
-  // Fetch all people and family tree data
-  const fetchData = async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
-
-      // Fetch tree data
-      let treeData: FamilyTreeData
-      if (readOnly) {
-        treeData = await treeApi.getPublishedTree(chartId)
-      } else {
-        if (!token) throw new Error("Authentication required")
-        treeData = await treeApi.getChartTree(token, chartId)
-      }
-      
-      // Ensure treeData has valid structure
-      const rawNodes = Array.isArray(treeData?.nodes) ? treeData.nodes : []
-      const rawLinks = Array.isArray(treeData?.links) ? treeData.links : []
-
-      // Create a map of personId to name for link transformation
-      const personIdToName = new Map<number, string>()
-      rawNodes.forEach((node: any) => {
-        if (node.personId && node.name) {
-          personIdToName.set(node.personId, node.name)
-        }
-      })
-
-      // Transform nodes to have 'id' field (required by chart component)
-      const transformedNodes = rawNodes.map((node: any) => ({
-        ...node,
-        id: String(node.id || node.personId), // Use unique numerical ID instead of name
-      }))
-
-      // Transform links: keep personId as string to match node ids
-      const transformedLinks = rawLinks.map((link: any) => ({
-        ...link,
-        source: String(link.source),
-        target: String(link.target),
-      }))
-
-      const validTreeData: FamilyTreeData = {
-        nodes: transformedNodes,
-        links: transformedLinks,
-      }
-      setFamilyTreeData(validTreeData)
-
-      // Fetch persons list
-      if (!readOnly && token) {
-        const personsResponse = await personApi.getChartPersons(token, chartId)
-        // Handle both direct array and { data: [...] } wrapper
-        const personsData = Array.isArray(personsResponse) 
-          ? personsResponse 
-          : Array.isArray(personsResponse?.data) 
-            ? personsResponse.data 
-            : []
-        setPeople(personsData)
-      } else {
-        // In read-only mode, extract people from nodes
-        const peopleData: Person[] = rawNodes.map((node: any) => ({
-          personId: node.id || node.personId || 0,
-          ownerId: node.ownerId || "",
-          chartId: chartId,
-          name: node.name || "Unknown",
-          gender: node.gender === "male" || node.gender === "M" ? "M" : node.gender === "female" || node.gender === "F" ? "F" : "O",
-          level: node.level || 0,
-          dob: node.dob || null,
-          dod: node.dod || null,
-          description: node.desc || node.description || null,
-          photoUrl: node.photoUrl || null,
-          lunarDeathDay: node.lunarDeathDay ?? null,
-          lunarDeathMonth: node.lunarDeathMonth ?? null,
-          lunarDeathYear: node.lunarDeathYear ?? null,
-          lunarIsLeap: node.lunarIsLeap ?? null,
-        }))
-        setPeople(peopleData)
-      }
-    } catch (error: any) {
-      console.error("Error fetching data:", error)
-      setError(error.message || "Failed to load family tree data. Please check if the server is running.")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Search for people (frontend filtering)
-  const handleSearch = (term: string) => {
-    setSearchTerm(term)
-    if (term.trim()) {
-      const filtered = people.filter((person) =>
-        person.name.toLowerCase().includes(term.toLowerCase())
-      )
-      setSearchResults(filtered)
-    } else {
-      setSearchResults([])
-      setFocusedPerson(null)
-    }
-  }
-
-  // Clear search
-  const clearSearch = () => {
-    setSearchTerm("")
-    setSearchResults([])
-    setFocusedPerson(null)
-  }
+  }, [sidebarOpen, closeSidebar])
 
   // Handle node click in chart
   const handleNodeClick = (personIdStr: string) => {
     const person = people.find((p) => String(p.personId) === personIdStr)
     if (person) {
-      setSelectedPerson(person)
-      setSidebarOpen(true)
+      selectPerson(person)
+      openSidebar()
     }
   }
 
   // Handle search result click
   const handleSearchResultClick = (person: Person) => {
     setFocusedPerson(String(person.personId))
-    setSearchTerm(person.name)
-    setSearchResults([])
+    handleSearch(person.name)
   }
 
   // Get person color based on gender and relationships
@@ -234,8 +110,8 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
   }
 
   useEffect(() => {
-    fetchData()
-  }, [chartId, readOnly])
+    fetchData(chartId, readOnly)
+  }, [chartId, readOnly, fetchData])
 
   if (loading) {
     return (
@@ -257,7 +133,7 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
           </div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">Lỗi kết nối</h2>
           <p className="text-gray-600 mb-4">{error}</p>
-          <Button onClick={fetchData}>Thử lại</Button>
+          <Button onClick={() => fetchData(chartId, readOnly)}>Thử lại</Button>
         </div>
       </div>
     )
@@ -271,14 +147,14 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
           <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
             <div className="flex flex-col sm:flex-row justify-end items-start sm:items-center py-3 sm:py-4 space-y-3 sm:space-y-0">
               <div className="flex items-center space-x-2 sm:space-x-4 w-full sm:w-auto">
-                <Button onClick={() => setShowAddPersonModal(true)} className="flex-1 sm:flex-none">
+                <Button onClick={() => toggleModal("addPerson", true)} className="flex-1 sm:flex-none">
                   <Plus className="h-4 w-4 mr-1 sm:mr-2" />
                   <span className="hidden sm:inline">Thêm người</span>
                   <span className="sm:hidden">Thêm</span>
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => setShowAddRelationshipModal(true)}
+                  onClick={() => toggleModal("addRelationship", true)}
                   className="flex-1 sm:flex-none"
                 >
                   <span className="hidden sm:inline">Thêm quan hệ</span>
@@ -286,7 +162,7 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
                 </Button>
                 <Button
                   variant="destructive"
-                  onClick={() => setShowDelRelationshipModal(true)}
+                  onClick={() => toggleModal("delRelationship", true)}
                   className="flex-1 sm:flex-none"
                 >
                   <span className="hidden sm:inline">Xóa quan hệ</span>
@@ -403,25 +279,14 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
                           type="text"
                           placeholder="Nhập số đời"
                           value={levelFilter}
-                          onChange={(e) => {
-                            const value = e.target.value
-                            setLevelFilter(value)
-                            if (value && parseInt(value) <= 0) {
-                              // setLevelError("Số đời phải lớn hơn 0")
-                            } else {
-                              // setLevelError(null)
-                            }
-                          }}
+                          onChange={(e) => setLevelFilter(e.target.value)}
                           className="w-32 h-9 pr-8"
                         />
                         {levelFilter && (
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => {
-                              setLevelFilter("")
-                              // setLevelError(null)
-                            }}
+                            onClick={() => setLevelFilter("")}
                             className="absolute right-0 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-transparent"
                           >
                             <X className="h-4 w-4 text-gray-400" />
@@ -446,8 +311,8 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
                       className="p-3 sm:p-4 rounded-lg border cursor-pointer hover:shadow-md transition-shadow flex"
                       style={{ backgroundColor: getPersonColor(person) }}
                       onClick={() => {
-                        setSelectedPerson(person)
-                        setSidebarOpen(true)
+                        selectPerson(person)
+                        openSidebar()
                       }}
                     >
                       {/* Avatar - 3/10 width */}
@@ -489,7 +354,7 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
                       {levelFilter ? "Thử nhập số đời khác hoặc xóa bộ lọc." : "Bắt đầu xây dựng cây phả hệ bằng cách thêm người đầu tiên."}
                     </p>
                     {!readOnly && !levelFilter && (
-                      <Button onClick={() => setShowAddPersonModal(true)}>
+                      <Button onClick={() => toggleModal("addPerson", true)}>
                         <Plus className="h-4 w-4 mr-2" />
                         Thêm người đầu tiên
                       </Button>
@@ -505,11 +370,6 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
         {!readOnly && (
           <div ref={sidebarRef}>
             <PersonSidebar
-              person={selectedPerson}
-              isOpen={sidebarOpen}
-              onClose={() => setSidebarOpen(false)}
-              familyTreeData={familyTreeData}
-              onDataUpdate={fetchData}
               chartId={chartId}
             />
           </div>
@@ -519,28 +379,9 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
       {/* Modals */}
       {!readOnly && (
         <>
-          <AddPersonModal
-            isOpen={showAddPersonModal}
-            onClose={() => setShowAddPersonModal(false)}
-            onSuccess={fetchData}
-            chartId={chartId}
-          />
-
-          <AddRelationshipModal
-            isOpen={showAddRelationshipModal}
-            onClose={() => setShowAddRelationshipModal(false)}
-            onSuccess={fetchData}
-            people={people}
-            chartId={chartId}
-          />
-
-          <DelRelationshipModal
-            isOpen={showDelRelationshipModal}
-            onClose={() => setShowDelRelationshipModal(false)}
-            onSuccess={fetchData}
-            people={people}
-            chartId={chartId}
-          />
+          <AddPersonModal chartId={chartId} />
+          <AddRelationshipModal chartId={chartId} />
+          <DelRelationshipModal chartId={chartId} />
         </>
       )}
     </div>

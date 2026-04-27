@@ -1,4 +1,5 @@
 import axios from "axios"
+import { useAuthStore } from "@/lib/stores/auth-store"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"
 
@@ -22,7 +23,7 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true
       
       try {
-        const refreshToken = typeof window !== "undefined" ? localStorage.getItem("refreshToken") : null
+        const refreshToken = useAuthStore.getState().refreshToken
 
         if (!refreshToken) {
           return Promise.reject(error)
@@ -39,20 +40,16 @@ apiClient.interceptors.response.use(
               
               const { accessToken } = response.data
               
-              // Lưu token mới
-              if (accessToken && typeof window !== "undefined") {
-                localStorage.setItem("token", accessToken)
-                // Dispatch event để AuthContext cập nhật state token
-                window.dispatchEvent(new CustomEvent("token-refreshed", { detail: accessToken }))
+              // Cập nhật token mới vào Zustand store (persist middleware tự sync localStorage)
+              if (accessToken) {
+                useAuthStore.getState().setToken(accessToken)
               }
               
               return accessToken
             } catch (err) {
               // Xóa token và redirect về login
+              useAuthStore.getState().logout()
               if (typeof window !== "undefined") {
-                localStorage.removeItem("token")
-                localStorage.removeItem("refreshToken")
-                localStorage.removeItem("user")
                 alert("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.")
                 window.location.href = "/login"
               }

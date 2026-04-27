@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import * as chartApi from "@/lib/api/chart"
+import { useAuthStore } from "@/lib/stores/auth-store"
 import { Card } from "@/components/ui/card";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ interface Chart {
 }
 
 export default function EditedChartsSection() {
+  const { token } = useAuthStore()
   const [charts, setCharts] = useState<Chart[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -25,9 +27,6 @@ export default function EditedChartsSection() {
   useEffect(() => {
     const fetchCharts = async () => {
       try {
-        const token =
-          typeof window !== "undefined" ? localStorage.getItem("token") : null;
-
         if (!token) {
           setError("Vui lòng đăng nhập để xem danh sách gia phả được chia sẻ");
           setIsLoading(false);

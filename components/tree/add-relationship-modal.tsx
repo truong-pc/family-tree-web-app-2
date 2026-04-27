@@ -19,25 +19,18 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import * as treeApi from "@/lib/api/tree"
-import { Person } from "./family-tree-view"
+import { useFamilyTreeStore } from "@/lib/stores/family-tree-store"
+import { useAuthStore } from "@/lib/stores/auth-store"
 
 interface AddRelationshipModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onSuccess: () => void
-  people: Person[]
   chartId: string
 }
 
 type RelType = "FATHER" | "MOTHER" | "SPOUSE";
 
-export default function AddRelationshipModal({
-  isOpen,
-  onClose,
-  onSuccess,
-  people,
-  chartId,
-}: AddRelationshipModalProps) {
+export default function AddRelationshipModal({ chartId }: AddRelationshipModalProps) {
+  const { showAddRelationshipModal: isOpen, toggleModal, fetchData } = useFamilyTreeStore()
+
   const [relType, setRelType] = useState<RelType>("FATHER")
   const [id1, setId1] = useState<string>("")
   const [id2, setId2] = useState<string>("")
@@ -61,7 +54,7 @@ export default function AddRelationshipModal({
 
     setIsSubmitting(true)
     try {
-      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
+      const token = useAuthStore.getState().token
       if (!token) throw new Error("Yêu cầu đăng nhập")
 
       const p1 = parseInt(id1)
@@ -80,8 +73,8 @@ export default function AddRelationshipModal({
       setId2("")
       setOrder(1)
       
-      onSuccess()
-      onClose()
+      fetchData(chartId, false)
+      toggleModal("addRelationship", false)
     } catch (error: any) {
       console.error("Error creating relationship:", error)
       if (error.response?.status === 404) {
@@ -100,7 +93,7 @@ export default function AddRelationshipModal({
       setId2("")
       setOrder(1)
       setError(null)
-      onClose()
+      toggleModal("addRelationship", false)
     }
   }
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import * as chartApi from "@/lib/api/chart"
-import { useAuth } from "@/lib/auth-context"
+import { useAuthStore } from "@/lib/stores/auth-store"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -45,7 +45,7 @@ export default function UserChartSection() {
   const [formData, setFormData] = useState({ name: "", description: "", published: false })
   const [editorEmail, setEditorEmail] = useState("")
   const [editorError, setEditorError] = useState("")
-  const { token } = useAuth()
+  const { token } = useAuthStore()
 
   const fetchEditorsInfo = async (editorIds: string[]) => {
     if (!token || editorIds.length === 0) {

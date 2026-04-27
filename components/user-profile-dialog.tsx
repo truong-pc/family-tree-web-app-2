@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useAuth } from "@/lib/auth-context"
+import { useAuthStore } from "@/lib/stores/auth-store"
 import * as authApi from "@/lib/api/auth"
 import { Button } from "@/components/ui/button"
 import {
@@ -23,7 +23,7 @@ export function UserProfileDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
-  const { token, updateUser } = useAuth()
+  const { token, updateUser } = useAuthStore()
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({

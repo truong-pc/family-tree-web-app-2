@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useAuth } from "@/lib/auth-context"
+import { useAuthStore } from "@/lib/stores/auth-store"
 import * as authApi from "@/lib/api/auth"
 import { useRouter } from "next/navigation"
 import {
@@ -23,7 +23,7 @@ interface UserChangePasswordDialogProps {
 
 export function UserChangePasswordDialog({ open, onOpenChange }: UserChangePasswordDialogProps) {
   const router = useRouter()
-  const { token, logout } = useAuth()
+  const { token, logout } = useAuthStore()
   const [oldPassword, setOldPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")

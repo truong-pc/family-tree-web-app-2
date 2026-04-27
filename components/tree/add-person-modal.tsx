@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -22,14 +21,16 @@ import {
 } from "@/components/ui/select"
 import { DatePicker } from "@/components/ui/date-picker"
 import * as personApi from "@/lib/api/person"
+import { useFamilyTreeStore } from "@/lib/stores/family-tree-store"
+import { useAuthStore } from "@/lib/stores/auth-store"
+
 interface AddPersonModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onSuccess: () => void
   chartId: string
 }
 
-export default function AddPersonModal({ isOpen, onClose, onSuccess, chartId }: AddPersonModalProps) {
+export default function AddPersonModal({ chartId }: AddPersonModalProps) {
+  const { showAddPersonModal: isOpen, toggleModal, fetchData } = useFamilyTreeStore()
+
   const [name, setName] = useState("")
   const [gender, setGender] = useState<"M" | "F" | "O">("M")
   const [level, setLevel] = useState("")
@@ -61,7 +62,7 @@ export default function AddPersonModal({ isOpen, onClose, onSuccess, chartId }: 
 
     setIsSubmitting(true)
     try {
-      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
+      const token = useAuthStore.getState().token
       if (!token) throw new Error("Yêu cầu đăng nhập")
 
       const levelNum = parseInt(level)
@@ -83,8 +84,8 @@ export default function AddPersonModal({ isOpen, onClose, onSuccess, chartId }: 
       setDod("")
       setDescription("")
       
-      onSuccess()
-      onClose()
+      fetchData(chartId, false)
+      toggleModal("addPerson", false)
     } catch (error: any) {
       console.error("Error creating person:", error)
       setError(error.response?.data?.message || "Thêm người thất bại. Vui lòng thử lại.")
@@ -102,7 +103,7 @@ export default function AddPersonModal({ isOpen, onClose, onSuccess, chartId }: 
       setDod("")
       setDescription("")
       setError(null)
-      onClose()
+      toggleModal("addPerson", false)
     }
   }
 

@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { useAuth } from "@/lib/auth-context"
+import { useAuthStore } from "@/lib/stores/auth-store"
 import { useEffect, useState } from "react"
 import DashboardLayout from "@/components/dashboard-layout"
 import UserChartSection from "@/components/user-chart-section"
@@ -11,7 +11,7 @@ import { Separator } from "@/components/ui/separator"
 
 export default function DashboardPage() {
   const router = useRouter()
-  const { user, token, isLoading } = useAuth()
+  const { user, token, isLoading } = useAuthStore()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {

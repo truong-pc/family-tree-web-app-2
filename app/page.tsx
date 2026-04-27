@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useAuth } from "@/lib/auth-context"
+import { useAuthStore } from "@/lib/stores/auth-store"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { useEffect, useState } from "react"
@@ -10,7 +10,7 @@ import PublishedCharts from "@/components/published-charts-section"
 
 export default function HomePage() {
   const router = useRouter()
-  const { user, token, isLoading } = useAuth()
+  const { user, token, isLoading } = useAuthStore()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {

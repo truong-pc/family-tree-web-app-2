@@ -26,28 +26,25 @@ import {
 } from "@/components/ui/select";
 import { DatePicker } from "@/components/ui/date-picker";
 import AddChildModal from "@/components/tree/add-child-modal";
-import { Person, FamilyTreeData } from "@/components/tree/family-tree-view";
 import * as personApi from "@/lib/api/person"
 import { extractPublicId } from "@/lib/utils";
 import Image from "next/image";
+import { useFamilyTreeStore } from "@/lib/stores/family-tree-store";
+import { useAuthStore } from "@/lib/stores/auth-store";
 
 interface Props {
-  person: Person | null;
-  isOpen: boolean;
-  onClose: () => void;
-  familyTreeData: FamilyTreeData;
-  onDataUpdate: () => void;
   chartId: string;
 }
 
-export default function PersonSidebar({
-  person,
-  isOpen,
-  onClose,
-  familyTreeData,
-  onDataUpdate,
-  chartId,
-}: Props) {
+export default function PersonSidebar({ chartId }: Props) {
+  const {
+    selectedPerson: person,
+    sidebarOpen: isOpen,
+    familyTreeData,
+    closeSidebar,
+    fetchData,
+  } = useFamilyTreeStore();
+
   const [showAddChildModal, setShowAddChildModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -82,6 +79,8 @@ export default function PersonSidebar({
 
   if (!person) return null;
 
+  const onDataUpdate = () => fetchData(chartId, false);
+
   // Save edited person
   const handleSave = async () => {
     setError(null);
@@ -100,8 +99,7 @@ export default function PersonSidebar({
 
     setIsSaving(true);
     try {
-      const token =
-        typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const token = useAuthStore.getState().token
       if (!token) throw new Error("Yêu cầu đăng nhập");
 
       await personApi.updatePerson(token, chartId, person.personId, {
@@ -205,8 +203,7 @@ export default function PersonSidebar({
       const oldPhotoUrl = person.photoUrl;
 
       // Update person with new photo URL
-      const token =
-        typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const token = useAuthStore.getState().token
       if (!token) throw new Error("Yêu cầu đăng nhập");
 
       await personApi.updatePerson(token, chartId, person.personId, {
@@ -242,8 +239,7 @@ export default function PersonSidebar({
     setError(null);
 
     try {
-      const token =
-        typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const token = useAuthStore.getState().token
       if (!token) throw new Error("Yêu cầu đăng nhập");
 
       await personApi.updatePerson(token, chartId, person.personId, {
@@ -278,8 +274,7 @@ export default function PersonSidebar({
 
     setIsDeleting(true);
     try {
-      const token =
-        typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const token = useAuthStore.getState().token
       if (!token) throw new Error("Yêu cầu đăng nhập");
 
       await personApi.deletePerson(token, chartId, person.personId);
@@ -290,7 +285,7 @@ export default function PersonSidebar({
       }
 
       onDataUpdate(); // Refresh data after successful deletion
-      onClose(); // Close sidebar
+      closeSidebar(); // Close sidebar
     } catch (error) {
       console.error("Error deleting person:", error);
       alert("Failed to delete person. Please try again.");
@@ -340,7 +335,7 @@ export default function PersonSidebar({
                   </Button>
                 </>
               )}
-              <Button variant="ghost" size="sm" onClick={onClose}>
+              <Button variant="ghost" size="sm" onClick={closeSidebar}>
                 <X className="h-4 w-4" />
               </Button>
             </div>
@@ -645,7 +640,6 @@ export default function PersonSidebar({
           setShowAddChildModal(false);
         }}
         chartId={chartId}
-        familyTreeData={familyTreeData}
       />
     </>
   );

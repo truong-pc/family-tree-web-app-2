@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useAuth } from "@/lib/auth-context"
+import { useAuthStore } from "@/lib/stores/auth-store"
 import { useState, useEffect, useRef } from "react"
 import * as authApi from "@/lib/api/auth"
 import { UserProfileDialog } from "@/components/user-profile-dialog"
@@ -10,7 +10,7 @@ import { UserChangePasswordDialog } from "@/components/user-changepassword-dialo
 
 export default function DashboardNavbar() {
   const router = useRouter()
-  const { user, token, refreshToken, logout } = useAuth()
+  const { user, token, refreshToken, logout } = useAuthStore()
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false)
