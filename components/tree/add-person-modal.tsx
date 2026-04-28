@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { DatePicker } from "@/components/ui/date-picker"
+import CustomAvatarUpload from "@/components/ui/custom-avatar-upload"
 import * as personApi from "@/lib/api/person"
 import { useFamilyTreeStore } from "@/lib/stores/family-tree-store"
 import { useAuthStore } from "@/lib/stores/auth-store"
@@ -37,6 +38,7 @@ export default function AddPersonModal({ chartId }: AddPersonModalProps) {
   const [dob, setDob] = useState("")
   const [dod, setDod] = useState("")
   const [description, setDescription] = useState("")
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -73,17 +75,11 @@ export default function AddPersonModal({ chartId }: AddPersonModalProps) {
         dob: dob || null,
         dod: dod || null,
         description: description.trim() || null,
-        photoUrl: null,
+        photoUrl: photoUrl || null,
       })
 
       // Reset form
-      setName("")
-      setGender("M")
-      setLevel("")
-      setDob("")
-      setDod("")
-      setDescription("")
-      
+      resetForm()
       fetchData(chartId, false)
       toggleModal("addPerson", false)
     } catch (error: any) {
@@ -94,22 +90,27 @@ export default function AddPersonModal({ chartId }: AddPersonModalProps) {
     }
   }
 
+  const resetForm = () => {
+    setName("")
+    setGender("M")
+    setLevel("")
+    setDob("")
+    setDod("")
+    setDescription("")
+    setPhotoUrl(null)
+    setError(null)
+  }
+
   const handleClose = () => {
     if (!isSubmitting) {
-      setName("")
-      setGender("M")
-      setLevel("")
-      setDob("")
-      setDod("")
-      setDescription("")
-      setError(null)
+      resetForm()
       toggleModal("addPerson", false)
     }
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Thêm người mới</DialogTitle>
           <DialogDescription>
@@ -118,11 +119,17 @@ export default function AddPersonModal({ chartId }: AddPersonModalProps) {
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
+          
+          {/* Avatar Upload */}
+          <div className="flex justify-center">
+            <CustomAvatarUpload
+              photoUrl={photoUrl}
+              onPhotoChange={setPhotoUrl}
+              disabled={isSubmitting}
+              size={80}
+              onError={setError}
+            />
+          </div>
 
           <div className="space-y-2">
             <Label htmlFor="name">Họ và tên *</Label>
@@ -194,6 +201,11 @@ export default function AddPersonModal({ chartId }: AddPersonModalProps) {
               disabled={isSubmitting}
             />
           </div>
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+              {error}
+            </div>
+          )}
 
           <div className="flex justify-end space-x-2 pt-4">
             <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>

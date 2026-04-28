@@ -15,6 +15,18 @@ export const getChartPersons = async (token: string, chartId: string, searchQuer
   }
 }
 
+export const getPersonDetail = async (token: string, chartId: string, personId: number) => {
+  try {
+    const response = await apiClient.get(`/api/v1/charts/${chartId}/persons/${personId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    return response.data
+  } catch (error) {
+    console.error("Get person detail error:", error)
+    throw error
+  }
+}
+
 export const createPerson = async (
   token: string, 
   chartId: string, 

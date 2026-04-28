@@ -119,12 +119,6 @@ export default function DelRelationshipModal({ chartId }: DelRelationshipModalPr
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
-
           <div className="space-y-2">
             <Label>Loại quan hệ</Label>
             <Select value={relType} onValueChange={(val: RelType) => setRelType(val)} disabled={isSubmitting}>
@@ -170,6 +164,11 @@ export default function DelRelationshipModal({ chartId }: DelRelationshipModalPr
               Thao tác này không thể hoàn tác.
             </p>
           </div>
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+              {error}
+            </div>
+          )}
 
           <div className="flex justify-end space-x-2 pt-4">
             <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from "react"
+import React, { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -25,41 +25,24 @@ import * as personApi from "@/lib/api/person"
 import { useAuthStore } from "@/lib/stores/auth-store"
 import type { PersonDetail } from "@/lib/stores/family-tree-store"
 
-interface AddChildModalProps {
+interface AddSpouseModalProps {
   isOpen: boolean
   onClose: () => void
-  parent: PersonDetail
+  person: PersonDetail
   onSuccess: () => void
   chartId: string
 }
 
-export default function AddChildModal({ isOpen, onClose, parent, onSuccess, chartId }: AddChildModalProps) {
+export default function AddSpouseModal({ isOpen, onClose, person, onSuccess, chartId }: AddSpouseModalProps) {
   const [name, setName] = useState("")
-  const [gender, setGender] = useState<"M" | "F" | "O">("M")
+  const [gender, setGender] = useState<"M" | "F" | "O">(person.gender === "M" ? "F" : "M")
+  const [spouseOrder, setSpouseOrder] = useState<number>(1)
   const [dob, setDob] = useState("")
   const [dod, setDod] = useState("")
   const [description, setDescription] = useState("")
-  const [childOrder, setChildOrder] = useState<number>(1)
-  const [selectedSpouseId, setSelectedSpouseId] = useState<string>("none")
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  // Get spouse options from parent's PersonDetail
-  const spouseOptions = useMemo(() => {
-    if (!parent.spouses) return []
-    return parent.spouses.map(s => ({
-      name: s.name,
-      id: s.personId,
-    }))
-  }, [parent.spouses])
-
-  useEffect(() => {
-    // Auto-select spouse if there is exactly one
-    if (spouseOptions.length === 1 && selectedSpouseId === "none") {
-      setSelectedSpouseId(spouseOptions[0].id.toString())
-    }
-  }, [spouseOptions, selectedSpouseId])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -75,27 +58,12 @@ export default function AddChildModal({ isOpen, onClose, parent, onSuccess, char
       const token = useAuthStore.getState().token
       if (!token) throw new Error("Yêu cầu đăng nhập")
 
-      let fatherId: number | null = null
-      let motherId: number | null = null
-
-      if (parent.gender === "M") {
-        fatherId = parent.personId
-        motherId = selectedSpouseId !== "none" ? parseInt(selectedSpouseId) : null
-      } else if (parent.gender === "F") {
-        motherId = parent.personId
-        fatherId = selectedSpouseId !== "none" ? parseInt(selectedSpouseId) : null
-      } else {
-        // Fallback for "Other" gender
-        fatherId = parent.personId
-      }
-
-      await personApi.addChild(token, chartId, {
+      await personApi.addSpouse(token, chartId, {
         name: name.trim(),
         gender,
-        level: parent.level + 1,
-        fatherId,
-        motherId,
-        childOrder,
+        level: person.level,
+        spouseId: person.personId,
+        spouseOrder,
         dob: dob || null,
         dod: dod || null,
         description: description.trim() || null,
@@ -106,8 +74,8 @@ export default function AddChildModal({ isOpen, onClose, parent, onSuccess, char
       resetForm()
       onSuccess()
     } catch (error: any) {
-      console.error("Error adding child:", error)
-      setError(error.response?.data?.message || error.response?.data?.detail || "Thêm con thất bại. Vui lòng thử lại.")
+      console.error("Error adding spouse:", error)
+      setError(error.response?.data?.message || error.response?.data?.detail || "Thêm vợ/chồng thất bại. Vui lòng thử lại.")
     } finally {
       setIsSubmitting(false)
     }
@@ -115,12 +83,11 @@ export default function AddChildModal({ isOpen, onClose, parent, onSuccess, char
 
   const resetForm = () => {
     setName("")
-    setGender("M")
+    setGender(person.gender === "M" ? "F" : "M")
+    setSpouseOrder(1)
     setDob("")
     setDod("")
     setDescription("")
-    setChildOrder(1)
-    setSelectedSpouseId("none")
     setPhotoUrl(null)
     setError(null)
   }
@@ -129,7 +96,7 @@ export default function AddChildModal({ isOpen, onClose, parent, onSuccess, char
     if (isOpen) {
       resetForm()
     }
-  }, [isOpen, parent])
+  }, [isOpen, person])
 
   const handleClose = () => {
     if (!isSubmitting) {
@@ -138,17 +105,21 @@ export default function AddChildModal({ isOpen, onClose, parent, onSuccess, char
     }
   }
 
+  const spouseLabel = person.gender === "M" ? "vợ" : person.gender === "F" ? "chồng" : "vợ/chồng"
+
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Thêm con cho {parent.name}</DialogTitle>
+          <DialogTitle>Thêm {spouseLabel} cho {person.name}</DialogTitle>
           <DialogDescription>
-            Thêm một người con mới cho {parent.name}.
+            Thêm một người {spouseLabel} mới cho {person.name}.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          
           {/* Avatar Upload */}
           <div className="flex justify-center">
             <CustomAvatarUpload
@@ -160,32 +131,13 @@ export default function AddChildModal({ isOpen, onClose, parent, onSuccess, char
             />
           </div>
 
-          {spouseOptions.length > 0 && (
-            <div className="space-y-2 p-3 bg-gray-50 rounded-lg border">
-              <Label htmlFor="spouse">Chọn {parent.gender === "M" ? "Mẹ" : "Cha"} (Tùy chọn)</Label>
-              <Select value={selectedSpouseId} onValueChange={setSelectedSpouseId} disabled={isSubmitting}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn cha/mẹ còn lại" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Không rõ / Không có trong sơ đồ</SelectItem>
-                  {spouseOptions.map(spouse => (
-                    <SelectItem key={spouse.id} value={spouse.id.toString()}>
-                      {spouse.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
           <div className="space-y-2">
-            <Label htmlFor="name">Tên người con *</Label>
+            <Label htmlFor="spouse-name">Họ và tên *</Label>
             <Input
-              id="name"
+              id="spouse-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Nhập tên người con"
+              placeholder={`Nhập tên ${spouseLabel}`}
               disabled={isSubmitting}
               required
             />
@@ -193,7 +145,7 @@ export default function AddChildModal({ isOpen, onClose, parent, onSuccess, char
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="gender">Giới tính *</Label>
+              <Label htmlFor="spouse-gender">Giới tính *</Label>
               <Select value={gender} onValueChange={(value: "M" | "F" | "O") => setGender(value)} disabled={isSubmitting}>
                 <SelectTrigger>
                   <SelectValue placeholder="Chọn giới tính" />
@@ -206,14 +158,14 @@ export default function AddChildModal({ isOpen, onClose, parent, onSuccess, char
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="childOrder">Thứ tự sinh</Label>
+              <Label htmlFor="spouse-order">Thứ tự {spouseLabel}</Label>
               <Input
-                id="childOrder"
+                id="spouse-order"
                 type="number"
                 min="1"
-                value={childOrder}
-                onChange={(e) => setChildOrder(parseInt(e.target.value) || 1)}
-                placeholder="Thứ tự sinh trong gia đình"
+                value={spouseOrder}
+                onChange={(e) => setSpouseOrder(parseInt(e.target.value) || 1)}
+                placeholder="1, 2, 3..."
                 disabled={isSubmitting}
               />
             </div>
@@ -221,16 +173,15 @@ export default function AddChildModal({ isOpen, onClose, parent, onSuccess, char
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="dob">Ngày sinh</Label>
+              <Label htmlFor="spouse-dob">Ngày sinh</Label>
               <DatePicker
                 date={dob}
                 setDate={setDob}
                 disabled={isSubmitting}
               />
             </div>
-
             <div className="space-y-2">
-              <Label htmlFor="dod">Ngày mất</Label>
+              <Label htmlFor="spouse-dod">Ngày mất</Label>
               <DatePicker
                 date={dod}
                 setDate={setDod}
@@ -240,9 +191,9 @@ export default function AddChildModal({ isOpen, onClose, parent, onSuccess, char
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Mô tả</Label>
+            <Label htmlFor="spouse-description">Mô tả</Label>
             <Textarea
-              id="description"
+              id="spouse-description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Thêm thông tin bổ sung..."
@@ -262,7 +213,7 @@ export default function AddChildModal({ isOpen, onClose, parent, onSuccess, char
               Hủy
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Đang thêm..." : "Thêm con"}
+              {isSubmitting ? "Đang thêm..." : `Thêm ${spouseLabel}`}
             </Button>
           </div>
         </form>

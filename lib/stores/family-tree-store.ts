@@ -22,6 +22,35 @@ export interface Person {
   lunarIsLeap?: boolean | null
 }
 
+export interface RelatedPerson {
+  personId: number
+  name: string
+  gender: string
+  birthOrder?: number | null
+  childOrder?: number | null
+  spouseOrder?: number | null
+}
+
+export interface PersonDetail {
+  personId: number
+  ownerId: string
+  chartId: string
+  name: string
+  gender: "M" | "F" | "O"
+  level: number
+  dob?: string | null
+  dod?: string | null
+  description?: string | null
+  photoUrl?: string | null
+  lunarDeathDay?: number | null
+  lunarDeathMonth?: number | null
+  lunarDeathYear?: number | null
+  lunarIsLeap?: boolean | null
+  parents: RelatedPerson[]
+  spouses: RelatedPerson[]
+  children: RelatedPerson[]
+}
+
 export interface FamilyTreeData {
   nodes: Array<{ id: string; gender: string; [key: string]: any }>
   links: Array<{ source: string; target: string; [key: string]: any }>
@@ -33,6 +62,10 @@ interface FamilyTreeState {
   // Data
   people: Person[]
   familyTreeData: FamilyTreeData
+
+  // Person detail (sidebar)
+  personDetail: PersonDetail | null
+  personDetailLoading: boolean
 
   // UI state
   selectedPerson: Person | null
@@ -51,6 +84,7 @@ interface FamilyTreeState {
 
   // Actions
   fetchData: (chartId: string, readOnly: boolean) => Promise<void>
+  fetchPersonDetail: (chartId: string, personId: number) => Promise<void>
   handleSearch: (term: string) => void
   clearSearch: () => void
   selectPerson: (person: Person | null) => void
@@ -65,6 +99,8 @@ interface FamilyTreeState {
 const initialState = {
   people: [] as Person[],
   familyTreeData: { nodes: [], links: [] } as FamilyTreeData,
+  personDetail: null as PersonDetail | null,
+  personDetailLoading: false,
   selectedPerson: null as Person | null,
   sidebarOpen: false,
   focusedPerson: null as string | null,
@@ -169,6 +205,23 @@ export const useFamilyTreeStore = create<FamilyTreeState>()((set, get) => ({
     }
   },
 
+  fetchPersonDetail: async (chartId: string, personId: number) => {
+    set({ personDetailLoading: true })
+    try {
+      const token = useAuthStore.getState().token
+      if (!token) throw new Error("Yêu cầu đăng nhập")
+
+      const detail = await personApi.getPersonDetail(token, chartId, personId)
+      set({
+        personDetail: detail,
+        personDetailLoading: false,
+      })
+    } catch (error: any) {
+      console.error("Error fetching person detail:", error)
+      set({ personDetailLoading: false })
+    }
+  },
+
   handleSearch: (term: string) => {
     const { people } = get()
     if (term.trim()) {
@@ -194,7 +247,7 @@ export const useFamilyTreeStore = create<FamilyTreeState>()((set, get) => ({
   },
 
   closeSidebar: () => {
-    set({ sidebarOpen: false })
+    set({ sidebarOpen: false, personDetail: null })
   },
 
   toggleModal: (modal, open) => {

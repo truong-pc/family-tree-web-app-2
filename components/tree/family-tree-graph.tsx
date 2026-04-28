@@ -283,7 +283,7 @@ export default function FamilyTreeChart({ data, onNodeClick, focusedPerson, getP
       .attr("height", nodeHeight)
       .attr("rx", 12)
       .attr("ry", 12)
-      .attr("fill", "#f8fafc")
+      .attr("fill", "#efefe7ff")
       .attr("stroke", "#e2e8f0")
       .attr("stroke-width", 1)
 
