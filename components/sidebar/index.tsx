@@ -53,9 +53,14 @@ export default function PersonSidebar({ chartId }: Props) {
     }
   }, [person?.personId, isOpen, chartId, fetchPersonDetail])
 
-  // Reset edit form when personDetail loads
+  // Exit edit mode when selecting a different person
   useEffect(() => {
-    if (personDetail) {
+    setIsEditing(false)
+  }, [person?.personId])
+
+  // Sync edit form with personDetail when not editing
+  useEffect(() => {
+    if (personDetail && !isEditing) {
       setEditForm({
         name: personDetail.name || "",
         gender: personDetail.gender || "M",
@@ -65,10 +70,9 @@ export default function PersonSidebar({ chartId }: Props) {
         description: personDetail.description || "",
       })
       setEditPhotoUrl(personDetail.photoUrl || null)
-      setIsEditing(false)
       setError(null)
     }
-  }, [personDetail])
+  }, [personDetail, isEditing])
 
   if (!person) return null
 
@@ -78,6 +82,24 @@ export default function PersonSidebar({ chartId }: Props) {
     await fetchData(chartId, false)
     if (person) {
       await fetchPersonDetail(chartId, person.personId)
+    }
+  }
+
+  // ── avatar ───────────────────────────────────────────────────────
+  const handleAvatarChange = async (newUrl: string | null) => {
+    setEditPhotoUrl(newUrl)
+    try {
+      const token = useAuthStore.getState().token
+      if (!token) throw new Error("Yêu cầu đăng nhập")
+
+      await personApi.updatePerson(token, chartId, person.personId, {
+        photoUrl: newUrl ?? "",
+      })
+      
+      await onDataUpdate()
+    } catch (err) {
+      console.error("Avatar save error:", err)
+      setError("Lưu ảnh đại diện thất bại. Vui lòng thử lại.")
     }
   }
 
@@ -218,12 +240,12 @@ export default function PersonSidebar({ chartId }: Props) {
           {personDetailLoading || !detail ? (
             <SidebarSkeleton />
           ) : isEditing ? (
-            <SidebarEditMode
-              error={error}
-              setError={setError}
-              editPhotoUrl={editPhotoUrl}
-              setEditPhotoUrl={setEditPhotoUrl}
-              isSaving={isSaving}
+              <SidebarEditMode
+                error={error}
+                setError={setError}
+                editPhotoUrl={editPhotoUrl}
+                setEditPhotoUrl={handleAvatarChange}
+                isSaving={isSaving}
               editForm={editForm}
               setEditForm={setEditForm}
               handleSave={handleSave}
