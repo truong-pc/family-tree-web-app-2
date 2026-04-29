@@ -310,7 +310,7 @@ export default function UserChartSection() {
                         <span className="text-sm font-medium">{editor.fullName}</span>
                         <span className="text-xs text-muted-foreground">{editor.email}</span>
                       </div>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleRemoveEditor(editor._id)}>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleRemoveEditor(editor.email)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
