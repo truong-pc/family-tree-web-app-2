@@ -51,13 +51,16 @@ export default function FamilyTreeChart({ data, onNodeClick, focusedPerson, getP
     }
   }, [onResetZoom])
 
+  // Update the SVG dimensions based on the container size
   useEffect(() => {
     const updateDimensions = () => {
       if (containerRef.current) {
         const containerWidth = containerRef.current.offsetWidth
-        const containerHeight = Math.max(500, window.innerHeight * 0.6)
+        // Use portrait detection: mobile portrait gets a compact 350px,
+        const isPortrait = window.innerHeight > window.innerWidth
+        const containerHeight = isPortrait ? 350 : window.innerHeight * 0.7
         setDimensions({
-          width: Math.max(500, containerWidth - 40),
+          width: Math.max(300, containerWidth - 20),
           height: containerHeight,
         })
       }
@@ -108,28 +111,28 @@ export default function FamilyTreeChart({ data, onNodeClick, focusedPerson, getP
 
     const avatarY = width < 768 ? 8 : 10
 
+    // Create a map to store all nodes with initialized relationship arrays
     const nodeMap = new Map()
     data.nodes.forEach((node) => {
       nodeMap.set(node.id, { ...node, children: [], parents: [], spouses: [], isPrimary: true, isIsolated: true })
     })
 
-    // 1st Pass: Parents
+    // 1st Pass: Process parent-child relationships
     data.links.forEach((link) => {
-      if (link.type === "SPOUSE_OF") return;
+      if (link.type === "SPOUSE_OF") return; // Skip spouse links in this pass
       const parent = nodeMap.get(link.source)
       const child = nodeMap.get(link.target)
       if (parent && child) {
         parent.children.push(child)
         child.parents.push(parent)
-        parent.isIsolated = false
+        parent.isIsolated = false // Node is no longer isolated if it has a relationship
         child.isIsolated = false
       }
     })
 
-    // 2nd Pass: Spouses
+    // 2nd Pass: Process spouse relationships to merge spouses into a single visual block
     data.links.forEach((link) => {
-      // Must be SPOUSE_OF or we assume otherwise
-      if (link.type !== "SPOUSE_OF") return;
+      if (link.type !== "SPOUSE_OF") return; // Only process spouse links
       const s1 = nodeMap.get(link.source)
       const s2 = nodeMap.get(link.target)
       if (s1 && s2) {
@@ -138,7 +141,8 @@ export default function FamilyTreeChart({ data, onNodeClick, focusedPerson, getP
         let primary = s1
         let secondary = s2
 
-        // Keep node with parents as primary
+        // Determine which node is primary. The node with parents is usually primary
+        // to maintain the correct lineage flow from top to bottom.
         if (s2.parents.length > 0 && s1.parents.length === 0) {
           primary = s2; secondary = s1;
         } else if (s1.isPrimary === false && s2.isPrimary === true) {
@@ -146,13 +150,13 @@ export default function FamilyTreeChart({ data, onNodeClick, focusedPerson, getP
         }
 
         if (secondary.isPrimary) {
-          secondary.isPrimary = false
+          secondary.isPrimary = false // Mark as secondary so it's drawn inside primary's block
           primary.spouses.push(secondary)
-          // merge children
+          // Merge children so both spouses share the same children links visually
           secondary.children.forEach((c: any) => {
             if (!primary.children.includes(c)) {
               primary.children.push(c);
-              // Also update child's parents array
+              // Also update child's parents array to point to the new primary
               if (!c.parents.includes(primary)) {
                 c.parents.push(primary);
               }
@@ -168,30 +172,13 @@ export default function FamilyTreeChart({ data, onNodeClick, focusedPerson, getP
     const allNodes: TreeNode[] = []
     const allLinks: any[] = []
 
+    // Helper to calculate the width of a node including its spouses
     function getBlockWidth(node: any) {
       const totalPeople = 1 + node.spouses.length
       return baseNodeWidth * totalPeople + (totalPeople - 1) * 10
     }
 
-    const isolatedColumnWidth = baseNodeWidth + 40
-    const isolatedColumnX = -(width - margin.left - margin.right) / 2 + isolatedColumnWidth / 2
-    const isolatedStartY = 60
-    const isolatedVerticalSpacing = nodeHeight + 15
-
-    isolatedNodes.forEach((node: any, index) => {
-      const bW = getBlockWidth(node)
-      const treeNode: TreeNode = {
-        id: node.id,
-        data: node,
-        children: [],
-        x: isolatedColumnX,
-        y: isolatedStartY + index * isolatedVerticalSpacing,
-        width: bW,
-        blockWidth: bW
-      }
-      allNodes.push(treeNode)
-    })
-
+    // Helper to calculate the required width for a subtree
     function calculateSubtreeWidth(node: any): number {
       const blockW = getBlockWidth(node)
       if (node.children.length === 0) return blockW + minNodeSpacing
@@ -202,6 +189,7 @@ export default function FamilyTreeChart({ data, onNodeClick, focusedPerson, getP
       return Math.max(blockW + minNodeSpacing, childrenWidth)
     }
 
+    // Recursively position nodes in the tree structure
     function positionSubtree(node: any, x: number, y: number, availableWidth: number): TreeNode {
       const bW = getBlockWidth(node)
       const treeNode: TreeNode = {
@@ -229,6 +217,7 @@ export default function FamilyTreeChart({ data, onNodeClick, focusedPerson, getP
           })
         })
 
+        // Re-center parent above children
         if (treeNode.children.length > 0) {
           const firstChild = treeNode.children[0]
           const lastChild = treeNode.children[treeNode.children.length - 1]
@@ -240,6 +229,7 @@ export default function FamilyTreeChart({ data, onNodeClick, focusedPerson, getP
       return treeNode
     }
 
+    // 1. Build the main tree(s)
     if (roots.length > 0) {
       let totalRootWidth = 0
       const rootWidths: number[] = []
@@ -249,7 +239,8 @@ export default function FamilyTreeChart({ data, onNodeClick, focusedPerson, getP
         totalRootWidth += rootW
       })
 
-      const mainTreeStartX = isolatedColumnWidth + 50 - totalRootWidth / 2
+      // Center the main tree(s) horizontally
+      const mainTreeStartX = -totalRootWidth / 2
       let currentX = mainTreeStartX
       roots.forEach((root: any, index: number) => {
         const rw = rootWidths[index]
@@ -257,6 +248,46 @@ export default function FamilyTreeChart({ data, onNodeClick, focusedPerson, getP
         currentX += rw
       })
     }
+
+    // 2. Build isolated nodes row below the main tree
+    // Find the lowest Y coordinate of the main tree to place isolated nodes below it
+    let maxTreeY = 60;
+    if (allNodes.length > 0) {
+      maxTreeY = Math.max(...allNodes.map(n => n.y))
+    }
+
+    // Add 100px padding below the tree for separation
+    const isolatedRowStartY = maxTreeY + levelHeight + 100;
+    
+    let totalIsolatedWidth = 0;
+    const isolatedWidths: number[] = [];
+    isolatedNodes.forEach((node: any) => {
+      const bW = getBlockWidth(node);
+      isolatedWidths.push(bW);
+      totalIsolatedWidth += bW + minNodeSpacing;
+    });
+    // Remove the trailing spacing for accurate width
+    if (totalIsolatedWidth > 0) {
+      totalIsolatedWidth -= minNodeSpacing;
+    }
+    
+    // Start drawing from left to center the entire isolated row
+    let currentIsolatedX = -totalIsolatedWidth / 2;
+    
+    isolatedNodes.forEach((node: any, index) => {
+      const bW = isolatedWidths[index];
+      const treeNode: TreeNode = {
+        id: node.id,
+        data: node,
+        children: [],
+        x: currentIsolatedX + bW / 2, // Place at center of its allocated width
+        y: isolatedRowStartY,
+        width: bW,
+        blockWidth: bW
+      }
+      allNodes.push(treeNode)
+      currentIsolatedX += bW + minNodeSpacing;
+    })
 
     const linkPaths = g.append("g").selectAll("path").data(allLinks).enter().append("path")
       .attr("stroke", "#323232ff")

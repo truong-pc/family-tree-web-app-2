@@ -83,12 +83,12 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
     return () => document.removeEventListener('pointerdown', handleClickOutside)
   }, [sidebarOpen, closeSidebar])
 
-  // Handle node click in chart
+  // Handle node click event from the FamilyTreeChart
   const handleNodeClick = (personIdStr: string) => {
     const person = people.find((p) => String(p.personId) === personIdStr)
     if (person) {
-      selectPerson(person)
-      openSidebar()
+      selectPerson(person) // Set the selected person in global store
+      openSidebar() // Open the details sidebar
     }
   }
 
@@ -98,17 +98,20 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
     handleSearch(person.name)
   }
 
-  // Get person color based on gender and relationships
+  // Get background color for person card based on relationships and gender
   const getPersonColor = (person: Person) => {
     const pidStr = String(person.personId)
+    // Check if the person is connected to any other node
     const hasRelationships = familyTreeData.links.some(
       (link) => link.source === pidStr || link.target === pidStr
     )
 
+    // Isolated nodes get a distinct yellow color, others are colored by gender
     if (!hasRelationships) return "#FEF3C7" // light yellow
     return person.gender === "M" ? "#DBEAFE" : person.gender === "F" ? "#FCE7F3" : "#E5E7EB" // blue, pink, or gray
   }
 
+  // Fetch family tree data when component mounts or chartId changes
   useEffect(() => {
     fetchData(chartId, readOnly)
   }, [chartId, readOnly, fetchData])
