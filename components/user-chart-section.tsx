@@ -219,10 +219,12 @@ export default function UserChartSection() {
             </CardTitle>
             <CardDescription className="mt-2">{chart.description || "Chưa có mô tả"}</CardDescription>
           </div>
-          <Button variant="default" size="sm" asChild>
+          <Button variant="default" size="sm" asChild className="ml-2">
              {/* Placeholder link for future tree visualization */}
             <Link href={`/dashboard/tree/${chart._id}`}>
-              <Eye className="mr-2 h-4 w-4" /> Xem Sơ Đồ Phả Hệ
+              <Eye className="mr-1 h-4 w-4" />
+              <span className="hidden sm:inline">Xem Sơ Đồ Phả Hệ</span>
+              <span className="sm:hidden">Sơ Đồ</span>
             </Link>
           </Button>
         </div>
