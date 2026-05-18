@@ -5,11 +5,11 @@ import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import RootLayoutClient from "./root-layout-client"
 
-const inter = Inter({ 
+const _inter = Inter({ 
   subsets: ["latin", "vietnamese"],
   variable: "--font-inter",
 })
-const _geistMono = Geist_Mono({ subsets: ["latin"] })
+// const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "Quản Lý Gia Phả - Family Tree Management",
@@ -35,7 +35,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi">
-      <body className={`${inter.variable} font-sans antialiased`}>
+      <body className={`${_inter.variable} font-sans antialiased`}>
         <RootLayoutClient>{children}</RootLayoutClient>
         <Analytics />
       </body>

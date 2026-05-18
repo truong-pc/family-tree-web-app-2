@@ -110,113 +110,115 @@ export default function AddSpouseModal({ isOpen, onClose, person, onSuccess, cha
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Thêm {spouseLabel} cho {person.name}</DialogTitle>
-          <DialogDescription>
-            Thêm một người {spouseLabel} mới cho {person.name}.
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-hidden p-0">
+        <div className="overflow-y-auto max-h-[90vh] p-6 space-y-4">
+          <DialogHeader>
+            <DialogTitle>Thêm {spouseLabel} cho {person.name}</DialogTitle>
+            <DialogDescription>
+              Thêm một người {spouseLabel} mới cho {person.name}.
+            </DialogDescription>
+          </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          
-          {/* Avatar Upload */}
-          <div className="flex justify-center">
-            <CustomAvatarUpload
-              photoUrl={photoUrl}
-              onPhotoChange={setPhotoUrl}
-              disabled={isSubmitting}
-              size={80}
-              onError={setError}
-            />
-          </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
 
-          <div className="space-y-2">
-            <Label htmlFor="spouse-name">Họ và tên *</Label>
-            <Input
-              id="spouse-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder={`Nhập tên ${spouseLabel}`}
-              disabled={isSubmitting}
-              required
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="spouse-gender">Giới tính *</Label>
-              <Select value={gender} onValueChange={(value: "M" | "F" | "O") => setGender(value)} disabled={isSubmitting}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn giới tính" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="M">Nam</SelectItem>
-                  <SelectItem value="F">Nữ</SelectItem>
-                  <SelectItem value="O">Khác</SelectItem>
-                </SelectContent>
-              </Select>
+            {/* Avatar Upload */}
+            <div className="flex justify-center">
+              <CustomAvatarUpload
+                photoUrl={photoUrl}
+                onPhotoChange={setPhotoUrl}
+                disabled={isSubmitting}
+                size={80}
+                onError={setError}
+              />
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="spouse-order">Thứ tự {spouseLabel}</Label>
+              <Label htmlFor="spouse-name">Họ và tên *</Label>
               <Input
-                id="spouse-order"
-                type="number"
-                min="1"
-                value={spouseOrder}
-                onChange={(e) => setSpouseOrder(parseInt(e.target.value) || 1)}
-                placeholder="1, 2, 3..."
+                id="spouse-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder={`Nhập tên ${spouseLabel}`}
                 disabled={isSubmitting}
+                required
               />
             </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="spouse-gender">Giới tính *</Label>
+                <Select value={gender} onValueChange={(value: "M" | "F" | "O") => setGender(value)} disabled={isSubmitting}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn giới tính" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="M">Nam</SelectItem>
+                    <SelectItem value="F">Nữ</SelectItem>
+                    <SelectItem value="O">Khác</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="spouse-order">Thứ tự {spouseLabel}</Label>
+                <Input
+                  id="spouse-order"
+                  type="number"
+                  min="1"
+                  value={spouseOrder}
+                  onChange={(e) => setSpouseOrder(parseInt(e.target.value)||0)}
+                  placeholder="1, 2, 3..."
+                  disabled={isSubmitting}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="spouse-dob">Ngày sinh</Label>
+                <DatePicker
+                  date={dob}
+                  setDate={setDob}
+                  disabled={isSubmitting}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="spouse-dod">Ngày mất</Label>
+                <DatePicker
+                  date={dod}
+                  setDate={setDod}
+                  disabled={isSubmitting}
+                />
+              </div>
+            </div>
+
             <div className="space-y-2">
-              <Label htmlFor="spouse-dob">Ngày sinh</Label>
-              <DatePicker
-                date={dob}
-                setDate={setDob}
+              <Label htmlFor="spouse-description">Mô tả</Label>
+              <Textarea
+                id="spouse-description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Thêm thông tin bổ sung..."
+                rows={3}
                 disabled={isSubmitting}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="spouse-dod">Ngày mất</Label>
-              <DatePicker
-                date={dod}
-                setDate={setDod}
-                disabled={isSubmitting}
-              />
+
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+                {error}
+              </div>
+            )}
+
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
+                Hủy
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Đang thêm..." : `Thêm ${spouseLabel}`}
+              </Button>
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="spouse-description">Mô tả</Label>
-            <Textarea
-              id="spouse-description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Thêm thông tin bổ sung..."
-              rows={3}
-              disabled={isSubmitting}
-            />
-          </div>
-
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
-              {error}
-            </div>
-          )}
-
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
-              Hủy
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Đang thêm..." : `Thêm ${spouseLabel}`}
-            </Button>
-          </div>
-        </form>
+          </form>
+        </div>
       </DialogContent>
     </Dialog>
   )

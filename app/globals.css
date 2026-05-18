@@ -76,7 +76,7 @@
 
 @theme inline {
   /* optional: --font-sans, --font-serif, --font-mono if they are applied in the layout.tsx */
-  --font-sans: var(--font-inter), "Segoe UI", sans-serif;
+  --font-sans: var(--font-inter), "Segoe UI";
   --font-mono: "Geist Mono", "Geist Mono Fallback";
   --color-background: var(--background);
   --color-foreground: var(--foreground);

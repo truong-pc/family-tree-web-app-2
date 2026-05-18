@@ -140,132 +140,134 @@ export default function AddChildModal({ isOpen, onClose, parent, onSuccess, char
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Thêm con cho {parent.name}</DialogTitle>
-          <DialogDescription>
-            Thêm một người con mới cho {parent.name}.
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-hidden p-0">
+        <div className="overflow-y-auto max-h-[90vh] p-6 space-y-4">
+          <DialogHeader>
+            <DialogTitle>Thêm con cho {parent.name}</DialogTitle>
+            <DialogDescription>
+              Thêm một người con mới cho {parent.name}.
+            </DialogDescription>
+          </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Avatar Upload */}
-          <div className="flex justify-center">
-            <CustomAvatarUpload
-              photoUrl={photoUrl}
-              onPhotoChange={setPhotoUrl}
-              disabled={isSubmitting}
-              size={80}
-              onError={setError}
-            />
-          </div>
-
-          {spouseOptions.length > 0 && (
-            <div className="space-y-2 p-3 bg-gray-50 rounded-lg border">
-              <Label htmlFor="spouse">Chọn {parent.gender === "M" ? "Mẹ" : "Cha"} (Tùy chọn)</Label>
-              <Select value={selectedSpouseId} onValueChange={setSelectedSpouseId} disabled={isSubmitting}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn cha/mẹ còn lại" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Không rõ / Không có trong sơ đồ</SelectItem>
-                  {spouseOptions.map(spouse => (
-                    <SelectItem key={spouse.id} value={spouse.id.toString()}>
-                      {spouse.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Avatar Upload */}
+            <div className="flex justify-center">
+              <CustomAvatarUpload
+                photoUrl={photoUrl}
+                onPhotoChange={setPhotoUrl}
+                disabled={isSubmitting}
+                size={80}
+                onError={setError}
+              />
             </div>
-          )}
 
-          <div className="space-y-2">
-            <Label htmlFor="name">Tên người con *</Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Nhập tên người con"
-              disabled={isSubmitting}
-              required
-            />
-          </div>
+            {spouseOptions.length > 0 && (
+              <div className="space-y-2 p-3 bg-gray-50 rounded-lg border">
+                <Label htmlFor="spouse">Chọn {parent.gender === "M" ? "Mẹ" : "Cha"} (Tùy chọn)</Label>
+                <Select value={selectedSpouseId} onValueChange={setSelectedSpouseId} disabled={isSubmitting}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn cha/mẹ còn lại" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Không rõ / Không có trong sơ đồ</SelectItem>
+                    {spouseOptions.map(spouse => (
+                      <SelectItem key={spouse.id} value={spouse.id.toString()}>
+                        {spouse.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
-          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="gender">Giới tính *</Label>
-              <Select value={gender} onValueChange={(value: "M" | "F" | "O") => setGender(value)} disabled={isSubmitting}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn giới tính" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="M">Nam</SelectItem>
-                  <SelectItem value="F">Nữ</SelectItem>
-                  <SelectItem value="O">Khác</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="childOrder">Thứ tự sinh</Label>
+              <Label htmlFor="name">Tên người con *</Label>
               <Input
-                id="childOrder"
-                type="number"
-                min="1"
-                value={childOrder}
-                onChange={(e) => setChildOrder(parseInt(e.target.value) || 1)}
-                placeholder="Thứ tự sinh trong gia đình"
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Nhập tên người con"
                 disabled={isSubmitting}
+                required
               />
             </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="gender">Giới tính *</Label>
+                <Select value={gender} onValueChange={(value: "M" | "F" | "O") => setGender(value)} disabled={isSubmitting}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn giới tính" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="M">Nam</SelectItem>
+                    <SelectItem value="F">Nữ</SelectItem>
+                    <SelectItem value="O">Khác</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="childOrder">Thứ tự sinh</Label>
+                <Input
+                  id="childOrder"
+                  type="number"
+                  min="1"
+                  value={childOrder}
+                  onChange={(e) => setChildOrder(parseInt(e.target.value) || 0)}
+                  placeholder="Thứ tự sinh trong gia đình"
+                  disabled={isSubmitting}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="dob">Ngày sinh</Label>
+                <DatePicker
+                  date={dob}
+                  setDate={setDob}
+                  disabled={isSubmitting}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="dod">Ngày mất</Label>
+                <DatePicker
+                  date={dod}
+                  setDate={setDod}
+                  disabled={isSubmitting}
+                />
+              </div>
+            </div>
+
             <div className="space-y-2">
-              <Label htmlFor="dob">Ngày sinh</Label>
-              <DatePicker
-                date={dob}
-                setDate={setDob}
+              <Label htmlFor="description">Mô tả</Label>
+              <Textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Thêm thông tin bổ sung..."
+                rows={3}
                 disabled={isSubmitting}
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="dod">Ngày mất</Label>
-              <DatePicker
-                date={dod}
-                setDate={setDod}
-                disabled={isSubmitting}
-              />
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+                {error}
+              </div>
+            )}
+
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
+                Hủy
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Đang thêm..." : "Thêm con"}
+              </Button>
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Mô tả</Label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Thêm thông tin bổ sung..."
-              rows={3}
-              disabled={isSubmitting}
-            />
-          </div>
-
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
-              {error}
-            </div>
-          )}
-
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
-              Hủy
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Đang thêm..." : "Thêm con"}
-            </Button>
-          </div>
-        </form>
+          </form>
+        </div>
       </DialogContent>
     </Dialog>
   )
