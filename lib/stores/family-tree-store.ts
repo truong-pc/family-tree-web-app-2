@@ -85,6 +85,7 @@ interface FamilyTreeState {
   // Actions
   fetchData: (chartId: string, readOnly: boolean) => Promise<void>
   fetchPersonDetail: (chartId: string, personId: number) => Promise<void>
+  updatePersonLocally: (personId: number, patch: Partial<Person>) => void
   handleSearch: (term: string) => void
   clearSearch: () => void
   selectPerson: (person: Person | null) => void
@@ -270,6 +271,24 @@ export const useFamilyTreeStore = create<FamilyTreeState>()((set, get) => ({
 
   setLevelFilter: (value) => {
     set({ levelFilter: value })
+  },
+
+  updatePersonLocally: (personId, patch) => {
+    set((state) => ({
+      people: state.people.map((p) =>
+        p.personId === personId ? { ...p, ...patch } : p
+      ),
+      familyTreeData: {
+        ...state.familyTreeData,
+        nodes: state.familyTreeData.nodes.map((n) =>
+          n.id === String(personId) ? { ...n, ...patch } : n
+        ),
+      },
+      selectedPerson:
+        state.selectedPerson?.personId === personId
+          ? { ...state.selectedPerson, ...patch }
+          : state.selectedPerson,
+    }))
   },
 
   reset: () => {

@@ -27,6 +27,7 @@ export default function PersonSidebar({ chartId }: Props) {
     closeSidebar,
     fetchData,
     fetchPersonDetail,
+    updatePersonLocally,
   } = useFamilyTreeStore()
 
   const [showAddChildModal, setShowAddChildModal] = useState(false)
@@ -88,6 +89,9 @@ export default function PersonSidebar({ chartId }: Props) {
   // ── avatar ───────────────────────────────────────────────────────
   const handleAvatarChange = async (newUrl: string | null) => {
     setEditPhotoUrl(newUrl)
+    const originalPhotoUrl = person.photoUrl
+    // Optimistic update for avatar
+    updatePersonLocally(person.personId, { photoUrl: newUrl ?? undefined })
     try {
       const token = useAuthStore.getState().token
       if (!token) throw new Error("Yêu cầu đăng nhập")
@@ -95,10 +99,13 @@ export default function PersonSidebar({ chartId }: Props) {
       await personApi.updatePerson(token, chartId, person.personId, {
         photoUrl: newUrl ?? "",
       })
-      
-      await onDataUpdate()
+      // Refresh person detail to keep sidebar relationships in sync
+      await fetchPersonDetail(chartId, person.personId)
     } catch (err) {
       console.error("Avatar save error:", err)
+      // Rollback on failure
+      updatePersonLocally(person.personId, { photoUrl: originalPhotoUrl ?? undefined })
+      setEditPhotoUrl(originalPhotoUrl ?? null)
       setError("Lưu ảnh đại diện thất bại. Vui lòng thử lại.")
     }
   }
@@ -116,26 +123,48 @@ export default function PersonSidebar({ chartId }: Props) {
       return
     }
 
+    // Save original data for rollback
+    const originalPersonData: Partial<typeof person> = {
+      name: person.name,
+      gender: person.gender,
+      level: person.level,
+      dob: person.dob,
+      dod: person.dod,
+      description: person.description,
+      photoUrl: person.photoUrl,
+    }
+
+    // Build patch from edit form
+    const patch = {
+      name: editForm.name,
+      gender: editForm.gender,
+      level: levelNum,
+      dob: editForm.dob || null,
+      dod: editForm.dod || null,
+      description: editForm.description || null,
+      photoUrl: editPhotoUrl ?? null,
+    }
+
+    // Optimistic update: apply immediately
+    updatePersonLocally(person.personId, patch)
+    setIsEditing(false)
     setIsSaving(true)
+
     try {
       const token = useAuthStore.getState().token
       if (!token) throw new Error("Yêu cầu đăng nhập")
 
       await personApi.updatePerson(token, chartId, person.personId, {
-        name: editForm.name,
-        gender: editForm.gender,
-        level: levelNum,
-        dob: editForm.dob || null,
-        dod: editForm.dod || null,
-        description: editForm.description || null,
+        ...patch,
         photoUrl: editPhotoUrl ?? "",
       })
-
-      setIsEditing(false)
-      setError(null)
-      await onDataUpdate()
+      // Refresh person detail to keep sidebar relationships in sync
+      await fetchPersonDetail(chartId, person.personId)
     } catch {
-      setError("Cập nhật thành viên thất bại. Vui lòng thử lại.")
+      // Rollback on failure
+      updatePersonLocally(person.personId, originalPersonData)
+      setIsEditing(true)
+      setError("Cập nhật thất bại. Vui lòng thử lại.")
     } finally {
       setIsSaving(false)
     }

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useRef } from "react"
+import React, { useEffect, useRef, useCallback } from "react"
 import { Search, Plus, X, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -99,7 +99,7 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
   }
 
   // Get background color for person card based on relationships and gender
-  const getPersonColor = (person: Person) => {
+  const getPersonColor = useCallback((person: Person) => {
     const pidStr = String(person.personId)
     // Check if the person is connected to any other node
     const hasRelationships = familyTreeData.links.some(
@@ -109,7 +109,13 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
     // Isolated nodes get a distinct yellow color, others are colored by gender
     if (!hasRelationships) return "#FEF3C7" // light yellow
     return person.gender === "M" ? "#DBEAFE" : person.gender === "F" ? "#FCE7F3" : "#E5E7EB" // blue, pink, or gray
-  }
+  }, [familyTreeData.links])
+
+  // Memoized color lookup by id string, passed to FamilyTreeChart
+  const getPersonColorById = useCallback((idStr: string) => {
+    const person = people.find((p) => String(p.personId) === idStr)
+    return person ? getPersonColor(person) : "#F3F4F6"
+  }, [people, getPersonColor])
 
   // Fetch family tree data when component mounts or chartId changes
   useEffect(() => {
@@ -260,10 +266,7 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
                   data={familyTreeData}
                   onNodeClick={handleNodeClick}
                   focusedPerson={focusedPerson}
-                  getPersonColor={(idStr: string) => {
-                    const person = people.find((p) => String(p.personId) === idStr)
-                    return person ? getPersonColor(person) : "#F3F4F6"
-                  }}
+                  getPersonColor={getPersonColorById}
                   onResetZoom={() => {}}
                 />
               </CardContent>

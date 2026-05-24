@@ -38,6 +38,7 @@ export default function FamilyTreeChart({ data, onNodeClick, focusedPerson, getP
   const zoomRef = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null)
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 })
   const isInitialRender = useRef(true)
+  const isStructureBuilt = useRef(false)
 
   useEffect(() => {
     if (onResetZoom) {
@@ -70,6 +71,7 @@ export default function FamilyTreeChart({ data, onNodeClick, focusedPerson, getP
     return () => window.removeEventListener("resize", updateDimensions)
   }, [])
 
+  // Effect A — Full structural rebuild (only when tree STRUCTURE or dimensions change)
   useEffect(() => {
     if (!svgRef.current || !data.nodes.length) return
 
@@ -329,6 +331,7 @@ export default function FamilyTreeChart({ data, onNodeClick, focusedPerson, getP
       people.forEach((person, pIndex) => {
         const pX = pIndex * (baseNodeWidth + 10)
         
+        // Person card rect with data-id for partial updates
         group.append("rect")
            .attr("x", pX)
            .attr("y", 0)
@@ -337,6 +340,8 @@ export default function FamilyTreeChart({ data, onNodeClick, focusedPerson, getP
            .attr("rx", 12)
            .attr("ry", 12)
            .attr("fill", getPersonColor(person.id))
+           .attr("data-id", person.id)
+           .attr("class", "person-card")
            .attr("stroke", focusedPerson === person.id ? "#ff6b6b" : "none")
            .attr("stroke-width", focusedPerson === person.id ? 3 : 0)
            .style("cursor", "pointer")
@@ -356,12 +361,14 @@ export default function FamilyTreeChart({ data, onNodeClick, focusedPerson, getP
            .attr("stroke-width", 2)
            .style("pointer-events", "none")
 
+        // Avatar image with data-id for partial updates
         group.append("image")
            .attr("x", pX + baseNodeWidth / 2 - avatarSize / 2)
            .attr("y", avatarY)
            .attr("width", avatarSize)
            .attr("height", avatarSize)
            .attr("href", cPhotoUrl)
+           .attr("data-id", person.id)
            .attr("clip-path", `url(#avatar-clip)`)
            .attr("preserveAspectRatio", "xMidYMid slice")
            .style("pointer-events", "none")
@@ -372,12 +379,15 @@ export default function FamilyTreeChart({ data, onNodeClick, focusedPerson, getP
         const pName = person.name || "Unknown"
         const displayName = pName.length > maxNameLength ? "..." + pName.substring(pName.length - (maxNameLength - 3)) : pName
 
+        // Name text with data-id for partial updates
         group.append("text")
            .text(displayName)
            .attr("font-size", fontSize)
            .attr("text-anchor", "middle")
            .attr("x", pX + baseNodeWidth / 2)
            .attr("y", textY)
+           .attr("data-id", person.id)
+           .attr("class", "person-name")
            .style("pointer-events", "none")
            .style("font-weight", "600")
            .attr("fill", "#1f2937")
@@ -431,7 +441,39 @@ export default function FamilyTreeChart({ data, onNodeClick, focusedPerson, getP
         savedTransform = transform
       }
     }
-  }, [data, focusedPerson, getPersonColor, onNodeClick, dimensions])
+
+    isStructureBuilt.current = true
+  }, [data.links, dimensions, onNodeClick])
+
+  // Effect B — Partial update (only when node DATA changes, not structure)
+  useEffect(() => {
+    if (!svgRef.current || !isStructureBuilt.current) return
+
+    const svg = d3.select(svgRef.current)
+    const { width } = dimensions
+    const maxNameLength = width < 768 ? 15 : 18
+
+    data.nodes.forEach((node) => {
+      const nodeId = node.id
+      const isFocused = focusedPerson === nodeId
+
+      // Update person card fill color and focused border
+      svg.selectAll(`rect.person-card[data-id="${nodeId}"]`)
+        .attr("fill", getPersonColor(nodeId))
+        .attr("stroke", isFocused ? "#ff6b6b" : "none")
+        .attr("stroke-width", isFocused ? 3 : 0)
+
+      // Update name text
+      const pName = node.name || "Unknown"
+      const displayName = pName.length > maxNameLength ? "..." + pName.substring(pName.length - (maxNameLength - 3)) : pName
+      svg.selectAll(`text.person-name[data-id="${nodeId}"]`)
+        .text(displayName)
+
+      // Update avatar image
+      svg.selectAll(`image[data-id="${nodeId}"]`)
+        .attr("href", node.photoUrl || "/placeholder-user.jpg")
+    })
+  }, [data.nodes, focusedPerson, getPersonColor, dimensions])
 
   const handleResetZoom = useCallback(() => {
     if (!svgRef.current || !zoomRef.current || !initialTransform) return
