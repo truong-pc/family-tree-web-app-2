@@ -57,8 +57,8 @@ export default function DashboardNavbar() {
           </Link>
 
           {/* Navigation Links */}
-          <div className="flex items-center">
-            <Link href="/dashboard" className="text-foreground hover:text-primary transition font-medium">
+          <div className="flex items-center gap-1">
+            <Link href="/dashboard" className="px-3 py-2 rounded-md text-foreground hover:text-primary hover:bg-secondary transition font-medium">
               Trang Chủ
             </Link>
             

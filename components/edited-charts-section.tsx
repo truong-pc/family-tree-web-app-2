@@ -115,11 +115,18 @@ export default function EditedChartsSection() {
               Ngày tạo: {new Date(chart.createdAt).toLocaleDateString("vi-VN")}
             </p>
           </div>
-          <Link href={`/dashboard/tree/${chart._id}`}>
-            <Button variant="outline" className="w-full bg-transparent">
-              Chỉnh Sửa
-            </Button>
-          </Link>
+          <div className="flex flex-col gap-2">
+            <Link href={`/dashboard/${chart._id}/tree`}>
+              <Button variant="outline" className="w-full bg-transparent">
+                Chỉnh Sửa
+              </Button>
+            </Link>
+            <Link href={`/dashboard/${chart._id}/events`}>
+              <Button variant="outline" className="w-full bg-transparent">
+                Xem Sự Kiện
+              </Button>
+            </Link>
+          </div>
         </Card>
       ))}
     </div>

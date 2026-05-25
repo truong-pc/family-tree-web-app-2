@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
-import { Trash2, Users, Edit, Plus, Eye, Share2 } from "lucide-react"
+import { Trash2, Users, Edit, Plus, Eye, Share2, Calendar } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
 
@@ -219,14 +219,22 @@ export default function UserChartSection() {
             </CardTitle>
             <CardDescription className="mt-2">{chart.description || "Chưa có mô tả"}</CardDescription>
           </div>
-          <Button variant="default" size="sm" asChild className="ml-2">
-             {/* Placeholder link for future tree visualization */}
-            <Link href={`/dashboard/tree/${chart._id}`}>
-              <Eye className="mr-1 h-4 w-4" />
-              <span className="hidden sm:inline">Xem Sơ Đồ Phả Hệ</span>
-              <span className="sm:hidden">Sơ Đồ</span>
-            </Link>
-          </Button>
+          <div className="flex flex-col gap-2 shrink-0 ml-4">
+            <Button variant="default" size="sm" asChild className="w-full">
+              <Link href={`/dashboard/${chart._id}/tree`}>
+                <Eye className="mr-1 h-4 w-4" />
+                <span className="hidden sm:inline">Xem Sơ Đồ Phả Hệ</span>
+                <span className="sm:hidden">Sơ Đồ</span>
+              </Link>
+            </Button>
+            <Button variant="outline" size="sm" asChild className="w-full">
+              <Link href={`/dashboard/${chart._id}/events`}>
+                <Calendar className="mr-1 h-4 w-4" />
+                <span className="hidden sm:inline">Xem Sự Kiện</span>
+                <span className="sm:hidden">Sự Kiện</span>
+              </Link>
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
