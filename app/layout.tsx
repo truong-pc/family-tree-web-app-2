@@ -26,6 +26,12 @@ export const metadata: Metadata = {
       },
     ],
   },
+  openGraph: {
+    title: "Quản Lý Gia Phả - Family Tree Management",
+    description:
+      "Hệ thống quản lý cây gia phả dòng họ - Manage your family tree efficiently",
+    images: [{ url: "/icon.png" }],
+  },
 }
 
 export default function RootLayout({
