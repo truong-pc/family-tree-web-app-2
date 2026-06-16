@@ -204,7 +204,9 @@ export default function EventsPageContent({ chartId }: { chartId: string }) {
     try {
       if (!token || !chartId) return
       const updated = await eventsApi.updateEvent(token, chartId, editing.sourceId, form)
-      setEvents((es) => es.map((e) => e.sourceId === editing.sourceId ? updated : e))
+      // Giữ field gốc (sourceId, personId, branch…) + cập nhật từ API + hardcode type
+      const merged = { ...editing, ...updated, type: "custom" as const }
+      setEvents((es) => es.map((e) => e.sourceId === editing.sourceId ? merged : e))
       setEditing(null)
       toast({ title: "Đã lưu thay đổi", description: form.title })
       // Refetch upcoming
