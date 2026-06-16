@@ -10,7 +10,7 @@
  * - Xóa dùng window.confirm() (thay vì DeleteModal)
  */
 
-import { useState, useMemo, useEffect, useCallback } from "react"
+import { useState, useMemo, useEffect, useCallback, useRef } from "react"
 import { useAuthStore } from "@/lib/stores/auth-store"
 import { useToast } from "@/hooks/use-toast"
 import * as eventsApi from "@/lib/api/events"
@@ -31,6 +31,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
+const ITEMS_PER_PAGE = 20
+
 export default function EventsPageContent({ chartId }: { chartId: string }) {
   const { token } = useAuthStore()
   const { toast } = useToast()
@@ -49,6 +51,10 @@ export default function EventsPageContent({ chartId }: { chartId: string }) {
   const [sortBy, setSortBy] = useState<"date-asc" | "date-desc" | "title" | "type">("date-asc")
   const [view, setView] = useState<"list" | "grid">("list")
   const [upcomingDays, setUpcomingDays] = useState<7 | 30 | 90>(7)
+
+  // Client-side infinite scroll
+  const [displayCount, setDisplayCount] = useState(ITEMS_PER_PAGE)
+  const sentinelRef = useRef<HTMLDivElement>(null)
 
   // Modal state — chỉ viewing + editing + creating (bỏ deleting)
   const [viewing, setViewing] = useState<FamilyEvent | null>(null)
@@ -85,13 +91,18 @@ export default function EventsPageContent({ chartId }: { chartId: string }) {
         setUpcoming(upcomingEvs || [])
         setError(null)
       })
-      .catch((err) => {
+      .catch((err: any) => {
         console.error("Failed to load events data:", err)
-        setError("Không thể kết nối đến máy chủ để tải sự kiện gia phả. Vui lòng thử lại sau.")
+        const detail = err.response?.data?.detail
+        const errorMessage =
+          err.response?.data?.message ||
+          (Array.isArray(detail) ? detail.map((d: any) => d.msg).join("; ") : detail) ||
+          "Không thể tải danh sách sự kiện từ máy chủ."
+        setError(errorMessage)
         toast({
           variant: "destructive",
           title: "Lỗi tải dữ liệu",
-          description: "Không thể tải danh sách sự kiện từ máy chủ.",
+          description: errorMessage,
         })
       })
       .finally(() => setEventsLoading(false))
@@ -131,6 +142,33 @@ export default function EventsPageContent({ chartId }: { chartId: string }) {
     return list
   }, [events, filterType, query, sortBy])
 
+  // Reset số lượng hiển thị khi bộ lọc thay đổi
+  useEffect(() => {
+    setDisplayCount(ITEMS_PER_PAGE)
+  }, [filterType, query, sortBy])
+
+  // Phần hiển thị: chỉ lấy displayCount phần tử đầu tiên
+  const displayedEvents = useMemo(() => filtered.slice(0, displayCount), [filtered, displayCount])
+  const hasMore = displayCount < filtered.length
+
+  // IntersectionObserver: khi sentinel xuất hiện → tải thêm
+  useEffect(() => {
+    const sentinel = sentinelRef.current
+    if (!sentinel) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setDisplayCount((prev) => Math.min(prev + ITEMS_PER_PAGE, filtered.length))
+        }
+      },
+      { rootMargin: "200px" }
+    )
+
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [filtered.length])
+
   // --- Handlers CRUD ---
 
   const handleViewEvent = useCallback((ev: FamilyEvent) => {
@@ -148,10 +186,15 @@ export default function EventsPageContent({ chartId }: { chartId: string }) {
       // Refetch upcoming để cập nhật nếu event mới nằm trong khoảng
       eventsApi.getUpcomingEvents(token, chartId, upcomingDays)
         .then(setUpcoming)
-        .catch(() => {})
-    } catch (err) {
+        .catch(() => { })
+    } catch (err: any) {
       console.error("Create event error:", err)
-      toast({ variant: "destructive", title: "Tạo sự kiện thất bại", description: "Lỗi kết nối hoặc dữ liệu không hợp lệ." })
+      const detail = err.response?.data?.detail
+      const errorMessage =
+        err.response?.data?.message ||
+        (Array.isArray(detail) ? detail.map((d: any) => d.msg).join("; ") : detail) ||
+        "Lỗi kết nối hoặc dữ liệu không hợp lệ."
+      toast({ variant: "destructive", title: "Tạo sự kiện thất bại", description: errorMessage })
     }
   }, [token, chartId, upcomingDays, toast])
 
@@ -167,10 +210,15 @@ export default function EventsPageContent({ chartId }: { chartId: string }) {
       // Refetch upcoming
       eventsApi.getUpcomingEvents(token, chartId, upcomingDays)
         .then(setUpcoming)
-        .catch(() => {})
-    } catch (err) {
+        .catch(() => { })
+    } catch (err: any) {
       console.error("Update event error:", err)
-      toast({ variant: "destructive", title: "Cập nhật thất bại", description: "Không thể cập nhật thông tin sự kiện." })
+      const detail = err.response?.data?.detail
+      const errorMessage =
+        err.response?.data?.message ||
+        (Array.isArray(detail) ? detail.map((d: any) => d.msg).join("; ") : detail) ||
+        "Không thể cập nhật thông tin sự kiện."
+      toast({ variant: "destructive", title: "Cập nhật thất bại", description: errorMessage })
     }
   }, [editing, token, chartId, upcomingDays, toast])
 
@@ -189,9 +237,14 @@ export default function EventsPageContent({ chartId }: { chartId: string }) {
       setUpcoming((es) => es.filter((e) => e.sourceId !== ev.sourceId))
       setViewing(null) // Đóng modal xem nếu đang mở
       toast({ variant: "destructive", title: "Đã xóa sự kiện", description: ev.title })
-    } catch (err) {
+    } catch (err: any) {
       console.error("Delete event error:", err)
-      toast({ variant: "destructive", title: "Xóa thất bại", description: "Không thể xóa sự kiện này." })
+      const detail = err.response?.data?.detail
+      const errorMessage =
+        err.response?.data?.message ||
+        (Array.isArray(detail) ? detail.map((d: any) => d.msg).join("; ") : detail) ||
+        "Không thể xóa sự kiện này."
+      toast({ variant: "destructive", title: "Xóa thất bại", description: errorMessage })
     }
   }, [token, chartId, toast])
 
@@ -383,7 +436,7 @@ export default function EventsPageContent({ chartId }: { chartId: string }) {
                 </div>
               ) : view === "grid" ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filtered.map((ev, idx) => (
+                  {displayedEvents.map((ev, idx) => (
                     <EventGridCard
                       key={`${ev.sourceId || ev.type}-${idx}`} ev={ev}
                       onView={() => handleViewEvent(ev)}
@@ -394,7 +447,7 @@ export default function EventsPageContent({ chartId }: { chartId: string }) {
                 </div>
               ) : (
                 <div className="space-y-2.5">
-                  {filtered.map((ev, idx) => (
+                  {displayedEvents.map((ev, idx) => (
                     <EventRow
                       key={`${ev.sourceId || ev.type}-${idx}`} ev={ev}
                       onView={() => handleViewEvent(ev)}
@@ -404,6 +457,21 @@ export default function EventsPageContent({ chartId }: { chartId: string }) {
                   ))}
                 </div>
               )}
+
+              {/* Sentinel + thông tin số lượng */}
+              {hasMore && (
+                <div ref={sentinelRef} className="flex items-center justify-center gap-2 py-8 text-sm text-slate-400">
+                  <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="32" strokeLinecap="round" />
+                  </svg>
+                  Đang tải thêm… ({displayedEvents.length}/{filtered.length})
+                </div>
+              )}
+              {/* {!hasMore && filtered.length > ITEMS_PER_PAGE && (
+                <div className="text-center py-6 text-xs text-slate-400">
+                  Hiển thị tất cả {filtered.length} sự kiện
+                </div>
+              )} */}
             </section>
           </>
         )}

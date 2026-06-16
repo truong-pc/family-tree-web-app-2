@@ -29,7 +29,7 @@ export default function PublishedCharts() {
         setError("")
       } catch (err) {
         console.error("Published charts fetch failed:", err)
-        setError("Không thể kết nối đến máy chủ. Vui lòng kiểm tra backend đang chạy ở http://localhost:8000")
+        setError("Không thể kết nối đến máy chủ.")
         setCharts([])
       } finally {
         setIsLoading(false)

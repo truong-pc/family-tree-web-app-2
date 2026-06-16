@@ -285,6 +285,7 @@ export default function EventEditorModal({ open, ev, onClose, onSave }: EventEdi
               </div>
             ) : (
               /* --- Âm lịch: 3 input thủ công --- */
+              <>
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-1.5">Ngày <span className="text-red-500">*</span></label>
@@ -331,6 +332,22 @@ export default function EventEditorModal({ open, ev, onClose, onSave }: EventEdi
                   {errors.year && <div className="text-xs text-red-600 mt-1">{errors.year}</div>}
                 </div>
               </div>
+              {/* ====== Tháng nhuận (chỉ âm lịch) ====== */}
+              <div className="flex items-center gap-2.5 mt-3 select-none">
+                <span
+                  onClick={() => update("isLeapMonth", !form.isLeapMonth)}
+                  className={`relative inline-flex items-center justify-center w-5 h-5 rounded border-2 transition-colors cursor-pointer ${form.isLeapMonth ? "border-amber-500 bg-amber-500" : "border-slate-300 bg-white hover:border-slate-400"}`}
+                >
+                  {form.isLeapMonth && (
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20 6 9 17l-5-5" />
+                    </svg>
+                  )}
+                </span>
+                <span className="text-sm text-slate-700 font-medium">Tháng nhuận</span>
+                <span className="text-[10px] text-slate-400">(nếu tháng âm lịch này là tháng nhuận)</span>
+              </div>
+              </>
             )}
 
             {/* ====== Lặp lại ====== */}
