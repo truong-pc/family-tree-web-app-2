@@ -465,9 +465,9 @@ export default function FamilyTreeChart({ data, onNodeClick, focusedPerson, getP
       const dy = yExtent[1] - yExtent[0] + nodeHeight + 100
       const scale = Math.min((width - margin.left - margin.right) / dx, (height - margin.top - margin.bottom) / dy, 0.8)
       const centerX = (xExtent[0] + xExtent[1]) / 2
-      const centerY = (yExtent[0] + yExtent[1]) / 2
 
-      const defaultTransform = d3.zoomIdentity.translate(width / 2, height / 2).scale(scale).translate(-centerX, -centerY)
+      // Anchor the top of the tree to the top margin instead of vertical-centering
+      const defaultTransform = d3.zoomIdentity.translate(width / 2, margin.top + nodeHeight / 2).scale(scale).translate(-centerX, -yExtent[0])
 
       if (isInitialRender.current) {
         initialTransformRef.current = defaultTransform

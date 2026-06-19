@@ -163,7 +163,7 @@ export default function AddRelationshipModal({ chartId }: AddRelationshipModalPr
               type="number"
               min="1"
               value={order}
-              onChange={(e) => setOrder(parseInt(e.target.value) || 1)}
+              onChange={(e) => setOrder(parseInt(e.target.value) || 0)}
               disabled={isSubmitting}
             />
           </div>
