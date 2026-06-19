@@ -46,6 +46,7 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
     toggleModal,
     setFocusedPerson,
     setLevelFilter,
+    reset,
   } = useFamilyTreeStore()
 
   const sidebarRef = useRef<HTMLDivElement>(null)
@@ -117,12 +118,24 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
     return person ? getPersonColor(person) : "#F3F4F6"
   }, [people, getPersonColor])
 
+  const lastFetchedRef = useRef<{ chartId: string; readOnly: boolean } | null>(null)
+
   // Fetch family tree data when component mounts or chartId changes
   useEffect(() => {
-    fetchData(chartId, readOnly)
-  }, [chartId, readOnly, fetchData])
+    const hasChanged = !lastFetchedRef.current || 
+                       lastFetchedRef.current.chartId !== chartId || 
+                       lastFetchedRef.current.readOnly !== readOnly
 
-  if (loading) {
+    if (hasChanged) {
+      reset()
+      fetchData(chartId, readOnly)
+      lastFetchedRef.current = { chartId, readOnly }
+    }
+  }, [chartId, readOnly, fetchData, reset])
+
+  const isInitialLoad = loading && people.length === 0
+
+  if (isInitialLoad) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -191,7 +204,12 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
             <Card className="mb-2 sm:mb-8 gap-2">
               <CardHeader className="pb-1 sm:pb-3 px-2 sm:px-6 space-y-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg sm:text-xl">Sơ đồ phả hệ</CardTitle>
+                  <div className="flex items-center space-x-2">
+                    <CardTitle className="text-lg sm:text-xl">Sơ đồ phả hệ</CardTitle>
+                    {loading && (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                    )}
+                  </div>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -268,6 +286,7 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
                   focusedPerson={focusedPerson}
                   getPersonColor={getPersonColorById}
                   onResetZoom={() => {}}
+                  chartId={chartId}
                 />
               </CardContent>
             </Card>
