@@ -169,7 +169,8 @@
   max-width: 100%;
   height: auto;
   border-radius: 12px;
-  margin: 1.2em 0;
+  margin: 1.2em auto;
+  display: block;
 }
 .news-content blockquote {
   border-left: 4px solid #c7d2fe;
@@ -179,7 +180,17 @@
   border-radius: 0 10px 10px 0;
   color: #475569;
 }
-.news-content figure { margin: 1.2em 0; }
+.news-content figure { margin: 1.2em 0; text-align: center; }
+.news-content figure a { display: inline-block; }
+
+/* Tôn trọng căn lề người viết chọn trong editor (inline style float:left/right).
+   Mặc định ở trên là căn giữa; float dưới đây ghi đè và thêm khoảng cách với chữ. */
+.news-content img[style*="float: left"],
+.news-content figure[style*="float: left"] { margin: 0.4em 1.2em 0.8em 0; }
+.news-content img[style*="float: right"],
+.news-content figure[style*="float: right"] { margin: 0.4em 0 0.8em 1.2em; }
+/* Dọn float để nội dung sau ảnh căn trái/phải không bị vỡ layout */
+.news-content::after { content: ""; display: block; clear: both; }
 .news-content figure figcaption {
   font-size: 0.85rem;
   color: #94a3b8;

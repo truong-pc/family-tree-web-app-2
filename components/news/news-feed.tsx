@@ -10,8 +10,8 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Loader2, Newspaper, AlertTriangle, Tag } from "lucide-react"
 import * as newsApi from "@/lib/api/news"
-import type { NewsCardOut } from "@/lib/api/news"
-import { SUGGESTED_TAGS, extractApiError } from "./news-helpers"
+import type { NewsCardOut, NewsTagOut } from "@/lib/api/news"
+import { extractApiError } from "./news-helpers"
 import NewsCard, { NewsFeaturedCard } from "./news-card"
 
 const PAGE_SIZE = 12
@@ -24,6 +24,7 @@ export default function NewsFeed() {
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [activeTag, setActiveTag] = useState<string | null>(null)
+  const [tags, setTags] = useState<NewsTagOut[]>([])
 
   const sentinelRef = useRef<HTMLDivElement>(null)
   // Token để bỏ qua kết quả của lần fetch cũ khi đổi bộ lọc.
@@ -75,6 +76,14 @@ export default function NewsFeed() {
     loadFirst(activeTag)
   }, [activeTag, loadFirst])
 
+  // Tải danh sách tag công khai 1 lần 
+  useEffect(() => {
+    newsApi
+      .getNewsTags()
+      .then((res) => setTags(res || []))
+      .catch(() => setTags([]))
+  }, [])
+
   // IntersectionObserver: khi sentinel xuất hiện → tải thêm.
   useEffect(() => {
     const el = sentinelRef.current
@@ -107,25 +116,28 @@ export default function NewsFeed() {
           </p>
         </div>
 
-        {/* Tag filter */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <button
-            onClick={() => setActiveTag(null)}
-            className={`text-xs px-3.5 py-1.5 rounded-full border transition-colors ${activeTag === null ? "bg-indigo-600 text-white border-indigo-600" : "bg-white/70 text-slate-600 border-slate-200 hover:border-indigo-300"}`}
-          >
-            Tất cả
-          </button>
-          {SUGGESTED_TAGS.map((t) => (
+        {/* Tag filter — lấy từ API /news/tags */}
+        {tags.length > 0 && (
+          <div className="flex items-center gap-2 flex-wrap">
             <button
-              key={t}
-              onClick={() => setActiveTag(t)}
-              className={`text-xs px-3.5 py-1.5 rounded-full border transition-colors inline-flex items-center gap-1 ${activeTag === t ? "bg-indigo-600 text-white border-indigo-600" : "bg-white/70 text-slate-600 border-slate-200 hover:border-indigo-300"}`}
+              onClick={() => setActiveTag(null)}
+              className={`text-xs px-3.5 py-1.5 rounded-full border transition-colors ${activeTag === null ? "bg-indigo-600 text-white border-indigo-600" : "bg-white/70 text-slate-600 border-slate-200 hover:border-indigo-300"}`}
             >
-              {activeTag === t && <Tag className="w-3 h-3" />}
-              {t}
+              Tất cả
             </button>
-          ))}
-        </div>
+            {tags.map(({ tag, count }) => (
+              <button
+                key={tag}
+                onClick={() => setActiveTag(tag)}
+                className={`text-xs px-3.5 py-1.5 rounded-full border transition-colors inline-flex items-center gap-1 ${activeTag === tag ? "bg-indigo-600 text-white border-indigo-600" : "bg-white/70 text-slate-600 border-slate-200 hover:border-indigo-300"}`}
+              >
+                {activeTag === tag && <Tag className="w-3 h-3" />}
+                {tag}
+                <span className={activeTag === tag ? "text-white/70" : "text-slate-400"}>· {count}</span>
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* States */}
         {loading ? (

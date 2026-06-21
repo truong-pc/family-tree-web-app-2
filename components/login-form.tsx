@@ -33,7 +33,7 @@ export default function LoginForm() {
       const userInfo = await authApi.getMe(token)
 
       login(token, refreshToken, {
-        id: userInfo.id,
+        id: userInfo.userId || userInfo.id,
         email: userInfo.email,
         fullName: userInfo.fullName,
       })

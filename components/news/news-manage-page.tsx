@@ -73,14 +73,7 @@ export default function NewsManagePage({ chartId }: { chartId: string }) {
 
   useEffect(() => { fetchPosts() }, [fetchPosts])
 
-  // --- Counts & filter ---
-  const counts = useMemo(() => ({
-    all: posts.length,
-    mine: posts.filter((p) => p.authorId === user?.id).length,
-    public: posts.filter((p) => p.public).length,
-    internal: posts.filter((p) => !p.public).length,
-  }), [posts, user?.id])
-
+  // --- Filter ---
   const filtered = useMemo(() => {
     let list = posts
     if (tab === "mine") list = list.filter((p) => p.authorId === user?.id)
@@ -94,11 +87,11 @@ export default function NewsManagePage({ chartId }: { chartId: string }) {
     return list
   }, [posts, tab, query, user?.id])
 
-  const tabs: { id: Tab; label: string; count: number; color?: string }[] = [
-    { id: "all", label: "Tất cả", count: counts.all },
-    { id: "mine", label: "Của tôi", count: counts.mine },
-    { id: "public", label: "Công khai", count: counts.public, color: "#047857" },
-    { id: "internal", label: "Nội bộ", count: counts.internal },
+  const tabs: { id: Tab; label: string; color?: string }[] = [
+    { id: "all", label: "Tất cả" },
+    { id: "mine", label: "Của tôi" },
+    { id: "public", label: "Công khai", color: "#047857" },
+    { id: "internal", label: "Nội bộ" },
   ]
 
   // --- CRUD ---
@@ -214,7 +207,7 @@ export default function NewsManagePage({ chartId }: { chartId: string }) {
                       className={`text-[13px] px-3 py-1.5 rounded-lg font-medium transition-colors ${active ? "bg-indigo-600 text-white" : "hover:bg-white"}`}
                       style={!active && t.color ? { color: t.color } : !active ? { color: "#475569" } : undefined}
                     >
-                      {t.label} · {t.count}
+                      {t.label}
                     </button>
                   )
                 })}

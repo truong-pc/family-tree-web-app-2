@@ -8,7 +8,7 @@
 
 import { Eye, Pencil, Trash2, Globe, Lock } from "lucide-react"
 import type { NewsCardOut } from "@/lib/api/news"
-import { coverGradient, formatNewsDate } from "./news-helpers"
+import { coverGradient, formatNewsDate, tagStyle } from "./news-helpers"
 
 interface NewsRowProps {
   post: NewsCardOut
@@ -20,7 +20,7 @@ interface NewsRowProps {
 
 export default function NewsRow({ post, canModify, onView, onEdit, onDelete }: NewsRowProps) {
   const dateStr = formatNewsDate(post.publishedAt || post.createdAt)
-  const firstTag = post.tags?.[0]
+  const tags = post.tags ?? []
 
   return (
     <div
@@ -42,11 +42,29 @@ export default function NewsRow({ post, canModify, onView, onEdit, onDelete }: N
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-slate-800 truncate">{post.title}</p>
         <p className="text-xs text-slate-400 mt-0.5 truncate">
-          {firstTag ? `${firstTag} · ` : ""}
           {post.authorName || "—"}
           {dateStr ? ` · ${dateStr}` : ""}
           {!canModify && <span className="text-slate-300"> · không phải bài của bạn</span>}
         </p>
+        {tags.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1 mt-1.5">
+            {tags.slice(0, 4).map((t) => {
+              const s = tagStyle(t)
+              return (
+                <span
+                  key={t}
+                  className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full"
+                  style={{ background: s.bg, color: s.color }}
+                >
+                  {t}
+                </span>
+              )
+            })}
+            {tags.length > 4 && (
+              <span className="text-[11px] text-slate-400">+{tags.length - 4}</span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Trạng thái */}

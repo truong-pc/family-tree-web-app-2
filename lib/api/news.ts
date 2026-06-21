@@ -39,12 +39,23 @@ export interface NewsFeedOut {
   nextCursor: string | null
 }
 
+/** 1 tag công khai kèm số bài (GET /news/tags). */
+export interface NewsTagOut {
+  tag: string
+  count: number
+}
+
 export interface NewsCreate {
   title: string
   contentHtml: string
   coverImageUrl?: string | null
   tags?: string[]
   public?: boolean
+  /**
+   * Toàn bộ URL ảnh đã upload trong phiên soạn (ảnh trong bài + mọi ảnh bìa
+   * từng chọn). Backend giữ lại URL còn dùng và dọn phần dư trên Cloudinary.
+   */
+  draftPhotoUrls?: string[]
 }
 
 export type NewsUpdate = Partial<NewsCreate>
@@ -73,6 +84,17 @@ export const getNewsFeed = async (params: {
     return response.data
   } catch (error) {
     console.error("Get news feed error:", error)
+    throw error
+  }
+}
+
+/** Danh sách tag công khai (kèm số bài), sắp theo count giảm dần. */
+export const getNewsTags = async (): Promise<NewsTagOut[]> => {
+  try {
+    const response = await apiClient.get(`/api/v1/news/tags`)
+    return response.data
+  } catch (error) {
+    console.error("Get news tags error:", error)
     throw error
   }
 }

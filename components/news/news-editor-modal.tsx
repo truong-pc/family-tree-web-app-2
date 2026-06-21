@@ -42,6 +42,8 @@ export interface NewsFormPayload {
   coverImageUrl: string | null
   tags: string[]
   public: boolean
+  /** URL ảnh đã upload/gỡ trong phiên soạn → backend dọn ảnh mồ côi. */
+  draftPhotoUrls: string[]
 }
 
 interface NewsEditorModalProps {
@@ -70,6 +72,13 @@ export default function NewsEditorModal({
   const [uploading, setUploading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const fileRef = useRef<HTMLInputElement>(null)
+  /**
+   * Gom mọi URL ảnh đã upload trong phiên (ảnh bìa + ảnh trong bài) CỘNG các
+   * URL ảnh cũ bị người dùng gỡ/đổi trong khi sửa. Gửi xuống `draftPhotoUrls`
+   * để backend giữ ảnh còn dùng và dọn phần dư trên Cloudinary (xem news-api.md
+   * mục 3.5/3.7 — backend KHÔNG tự suy ra ảnh cũ bị gỡ, phải liệt kê tường minh).
+   */
+  const draftPhotos = useRef<Set<string>>(new Set())
 
   /** Khởi tạo / reset form khi mở modal. */
   useEffect(() => {
@@ -89,7 +98,15 @@ export default function NewsEditorModal({
     }
     setTagInput("")
     setErrors({})
+    draftPhotos.current = new Set()
   }, [open, post])
+
+  /** Upload + ghi lại URL để backend dọn ảnh mồ côi sau này. */
+  const trackedUpload = async (file: File): Promise<string> => {
+    const url = await uploadImage(file)
+    draftPhotos.current.add(url)
+    return url
+  }
 
   /**
    * HugeRTE render các menu/hộp thoại (toolbar "…", chèn ảnh/liên kết) vào
@@ -153,13 +170,21 @@ export default function NewsEditorModal({
     setErrors((p) => ({ ...p, cover: "" }))
     setUploading(true)
     try {
-      const url = await uploadImage(file)
+      // Ảnh bìa cũ (nếu có) thành ứng viên dọn rác khi đổi sang ảnh mới.
+      if (coverImageUrl) draftPhotos.current.add(coverImageUrl)
+      const url = await trackedUpload(file)
       setCoverImageUrl(url)
     } catch {
       setErrors((p) => ({ ...p, cover: "Tải ảnh bìa thất bại" }))
     } finally {
       setUploading(false)
     }
+  }
+
+  /** Xóa ảnh bìa: ghi URL cũ vào draftPhotos để backend dọn nếu không còn dùng. */
+  const handleRemoveCover = () => {
+    if (coverImageUrl) draftPhotos.current.add(coverImageUrl)
+    setCoverImageUrl(null)
   }
 
   const validate = (): boolean => {
@@ -181,6 +206,7 @@ export default function NewsEditorModal({
       coverImageUrl: coverImageUrl || null,
       tags,
       public: makePublic,
+      draftPhotoUrls: [...draftPhotos.current],
     })
   }
 
@@ -255,7 +281,7 @@ export default function NewsEditorModal({
                     </button>
                     <button
                       type="button"
-                      onClick={() => setCoverImageUrl(null)}
+                      onClick={handleRemoveCover}
                       className="px-2.5 py-1.5 rounded-lg bg-white/90 backdrop-blur text-xs font-semibold text-red-600 shadow inline-flex items-center gap-1"
                     >
                       <Trash2 className="w-3.5 h-3.5" /> Xóa
@@ -346,7 +372,7 @@ export default function NewsEditorModal({
               <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-1.5">
                 Nội dung <span className="text-red-500">*</span>
               </label>
-              <NewsEditor value={contentHtml} onChange={setContentHtml} />
+              <NewsEditor value={contentHtml} onChange={setContentHtml} onUpload={trackedUpload} />
               {errors.content && <div className="text-xs text-red-600 mt-1">{errors.content}</div>}
             </div>
 

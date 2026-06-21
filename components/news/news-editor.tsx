@@ -16,9 +16,12 @@ const HUGERTE_SRC = "https://cdn.jsdelivr.net/npm/hugerte@1/hugerte.min.js"
 export default function NewsEditor({
   value,
   onChange,
+  onUpload = uploadImage,
 }: {
   value: string
   onChange: (html: string) => void
+  /** Upload ảnh (mặc định uploadImage). Truyền bản "tracked" để gom draftPhotoUrls. */
+  onUpload?: (file: File) => Promise<string>
 }) {
   return (
     <Editor
@@ -60,7 +63,7 @@ export default function NewsEditor({
           "h1,h2,h3,h4,h5,h6{margin:0.6em 0 0.3em;line-height:1.25}",
         // HugeRTE/TinyMCE 6: handler trả về Promise<string> = URL ảnh trực tiếp.
         images_upload_handler: (blobInfo: any) =>
-          uploadImage(blobInfo.blob() as File),
+          onUpload(blobInfo.blob() as File),
         // Cho phép nút "Ảnh" trên toolbar chọn tệp & upload thẳng lên Cloudinary.
         file_picker_callback: (
           cb: (url: string, meta?: { title?: string }) => void,
@@ -72,7 +75,7 @@ export default function NewsEditor({
             const file = input.files?.[0]
             if (!file) return
             try {
-              const url = await uploadImage(file)
+              const url = await onUpload(file)
               cb(url, { title: file.name })
             } catch {
               cb("", {})

@@ -45,7 +45,7 @@ export default function NewsArticle({ postId }: { postId: string }) {
           "radial-gradient(at 18% 12%, rgba(129,140,248,0.22), transparent 48%), radial-gradient(at 85% 14%, rgba(56,189,248,0.18), transparent 50%), #f3f4fb",
       }}
     >
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="w-full md:w-[85%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Link href="/news" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-indigo-700 transition-colors mb-6">
           <ArrowLeft className="w-4 h-4" /> Quay lại tin tức
         </Link>
