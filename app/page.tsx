@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { useEffect, useState } from "react"
 import PublishedCharts from "@/components/published-charts-section"
+import PublicNavbar from "@/components/public-navbar"
 
 export default function HomePage() {
   const router = useRouter()
@@ -36,22 +37,7 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-background to-secondary">
       {/* Navigation */}
-      <nav className="border-b border-border bg-card">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-3 text-2xl font-bold text-primary">
-            <img src="/icon.png" alt="Logo" className="w-10 h-10 object-contain" />
-            Hệ Thống Quản Lý Gia Phả
-          </div>
-          <div className="flex gap-4">
-            <Link href="/login">
-              <Button variant="outline">Đăng Nhập</Button>
-            </Link>
-            <Link href="/register">
-              <Button>Đăng Ký</Button>
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <PublicNavbar />
 
       {/* Hero Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">

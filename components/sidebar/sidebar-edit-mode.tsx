@@ -25,7 +25,10 @@ interface SidebarEditModeProps {
   error: string | null
   setError: (err: string | null) => void
   editPhotoUrl: string | null
-  setEditPhotoUrl: (url: string | null) => void
+  /** Gọi khi chọn ảnh mới (File) hoặc gỡ ảnh (null). Upload thực hiện lúc lưu. */
+  onPhotoFileChange: (file: File | null) => void
+  /** Gọi khi gỡ ảnh đã lưu, để xoá luôn editPhotoUrl. */
+  onRemovePhoto: () => void
   isSaving: boolean
   editForm: EditFormState
   setEditForm: (form: EditFormState) => void
@@ -37,7 +40,8 @@ export function SidebarEditMode({
   error,
   setError,
   editPhotoUrl,
-  setEditPhotoUrl,
+  onPhotoFileChange,
+  onRemovePhoto,
   isSaving,
   editForm,
   setEditForm,
@@ -55,7 +59,8 @@ export function SidebarEditMode({
       {/* Avatar edit */}
       <CustomAvatarUpload
         photoUrl={editPhotoUrl}
-        onPhotoChange={setEditPhotoUrl}
+        onFileChange={onPhotoFileChange}
+        onRemove={onRemovePhoto}
         disabled={isSaving}
         size={96}
         onError={setError}

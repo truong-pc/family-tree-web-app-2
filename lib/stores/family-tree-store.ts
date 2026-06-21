@@ -70,6 +70,8 @@ interface FamilyTreeState {
   // UI state
   selectedPerson: Person | null
   sidebarOpen: boolean
+  /** True khi sidebar đang ở chế độ sửa và có thay đổi chưa lưu. */
+  isEditDirty: boolean
   focusedPerson: string | null
   loading: boolean
   error: string | null
@@ -91,6 +93,9 @@ interface FamilyTreeState {
   selectPerson: (person: Person | null) => void
   openSidebar: () => void
   closeSidebar: () => void
+  setEditDirty: (dirty: boolean) => void
+  /** Trả về true nếu được phép rời edit (không dirty, hoặc người dùng xác nhận bỏ thay đổi). */
+  confirmDiscardChanges: () => boolean
   toggleModal: (modal: ModalName, open: boolean) => void
   setFocusedPerson: (id: string | null) => void
   setLevelFilter: (value: string) => void
@@ -104,6 +109,7 @@ const initialState = {
   personDetailLoading: false,
   selectedPerson: null as Person | null,
   sidebarOpen: false,
+  isEditDirty: false,
   focusedPerson: null as string | null,
   loading: false,
   error: null as string | null,
@@ -240,7 +246,7 @@ export const useFamilyTreeStore = create<FamilyTreeState>()((set, get) => ({
   },
 
   selectPerson: (person) => {
-    set({ selectedPerson: person })
+    set({ selectedPerson: person, isEditDirty: false })
   },
 
   openSidebar: () => {
@@ -248,7 +254,16 @@ export const useFamilyTreeStore = create<FamilyTreeState>()((set, get) => ({
   },
 
   closeSidebar: () => {
-    set({ sidebarOpen: false, personDetail: null })
+    set({ sidebarOpen: false, personDetail: null, isEditDirty: false })
+  },
+
+  setEditDirty: (dirty) => {
+    set({ isEditDirty: dirty })
+  },
+
+  confirmDiscardChanges: () => {
+    if (!get().isEditDirty) return true
+    return window.confirm("Bạn có các thay đổi chưa được lưu. Thoát và bỏ qua các thay đổi này?")
   },
 
   toggleModal: (modal, open) => {

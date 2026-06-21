@@ -61,7 +61,10 @@ export default function DashboardNavbar() {
             <Link href="/dashboard" className="px-3 py-2 rounded-md text-foreground hover:text-primary hover:bg-secondary transition font-medium">
               Trang Chủ
             </Link>
-            
+            <Link href="/news" className="px-3 py-2 rounded-md text-foreground hover:text-primary hover:bg-secondary transition font-medium">
+              Tin Tức
+            </Link>
+
             {/* My Account Dropdown */}
             <div className="relative" ref={dropdownRef}>
               <button

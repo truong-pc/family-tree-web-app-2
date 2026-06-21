@@ -22,6 +22,7 @@ import {
 import { DatePicker } from "@/components/ui/date-picker"
 import CustomAvatarUpload from "@/components/ui/custom-avatar-upload"
 import * as personApi from "@/lib/api/person"
+import * as cloudinary from "@/lib/services/cloudinary"
 import { useAuthStore } from "@/lib/stores/auth-store"
 import type { PersonDetail } from "@/lib/stores/family-tree-store"
 
@@ -41,7 +42,7 @@ export default function AddChildModal({ isOpen, onClose, parent, onSuccess, char
   const [description, setDescription] = useState("")
   const [childOrder, setChildOrder] = useState<number>(1)
   const [selectedSpouseId, setSelectedSpouseId] = useState<string>("none")
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null)
+  const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -89,6 +90,12 @@ export default function AddChildModal({ isOpen, onClose, parent, onSuccess, char
         fatherId = parent.personId
       }
 
+      // Hoãn upload: chỉ đẩy ảnh lên Cloudinary khi người dùng thực sự lưu.
+      let photoUrl: string | null = null
+      if (photoFile) {
+        photoUrl = await cloudinary.uploadImage(photoFile)
+      }
+
       await personApi.addChild(token, chartId, {
         name: name.trim(),
         gender,
@@ -99,7 +106,7 @@ export default function AddChildModal({ isOpen, onClose, parent, onSuccess, char
         dob: dob || null,
         dod: dod || null,
         description: description.trim() || null,
-        photoUrl: photoUrl || null,
+        photoUrl,
       })
 
       // Reset form
@@ -121,7 +128,7 @@ export default function AddChildModal({ isOpen, onClose, parent, onSuccess, char
     setDescription("")
     setChildOrder(1)
     setSelectedSpouseId("none")
-    setPhotoUrl(null)
+    setPhotoFile(null)
     setError(null)
   }
 
@@ -153,8 +160,8 @@ export default function AddChildModal({ isOpen, onClose, parent, onSuccess, char
             {/* Avatar Upload */}
             <div className="flex justify-center">
               <CustomAvatarUpload
-                photoUrl={photoUrl}
-                onPhotoChange={setPhotoUrl}
+                photoUrl={null}
+                onFileChange={setPhotoFile}
                 disabled={isSubmitting}
                 size={80}
                 onError={setError}

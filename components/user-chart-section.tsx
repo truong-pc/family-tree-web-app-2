@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
-import { Trash2, Users, Edit, Plus, Eye, Share2, Calendar } from "lucide-react"
+import { Trash2, Users, Edit, Plus, Eye, Share2, Calendar, Newspaper } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
 
@@ -232,6 +232,13 @@ export default function UserChartSection() {
                 <Calendar className="mr-1 h-4 w-4" />
                 <span className="hidden sm:inline">Xem Sự Kiện</span>
                 <span className="sm:hidden">Sự Kiện</span>
+              </Link>
+            </Button>
+            <Button variant="outline" size="sm" asChild className="w-full">
+              <Link href={`/dashboard/${chart._id}/news`}>
+                <Newspaper className="mr-1 h-4 w-4" />
+                <span className="hidden sm:inline">Quản Lý Tin Tức</span>
+                <span className="sm:hidden">Tin Tức</span>
               </Link>
             </Button>
           </div>

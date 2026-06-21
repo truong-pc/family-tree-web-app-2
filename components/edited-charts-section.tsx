@@ -126,6 +126,11 @@ export default function EditedChartsSection() {
                 Xem Sự Kiện
               </Button>
             </Link>
+            <Link href={`/dashboard/${chart._id}/news`}>
+              <Button variant="outline" className="w-full bg-transparent">
+                Quản Lý Tin Tức
+              </Button>
+            </Link>
           </div>
         </Card>
       ))}

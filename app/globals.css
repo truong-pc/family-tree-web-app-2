@@ -127,3 +127,89 @@
     cursor: pointer;
   }
 }
+
+/* ── HugeRTE trong Radix Dialog ──
+   Dialog (modal) đặt pointer-events:none lên <body>; menu/hộp thoại của HugeRTE
+   (blocks, chèn ảnh/liên kết…) render vào .tox-silver-sink (.tox-hugerte-aux) ở
+   cấp <body> nên bị thừa hưởng → bấm không ăn. Ép lại pointer-events + nâng
+   z-index lên trên modal. (HugeRTE dùng tiền tố .tox-hugerte, KHÔNG phải
+   .tox-tinymce.) */
+.tox-silver-sink,
+.tox-hugerte-aux {
+  pointer-events: auto !important;
+  z-index: 100000 !important;
+}
+
+/* ── Typography cho nội dung bài tin tức (HTML đã sanitize) ── */
+.news-content {
+  color: #334155;
+  font-size: 1.05rem;
+  line-height: 1.75;
+  word-break: break-word;
+}
+.news-content > :first-child { margin-top: 0; }
+.news-content h1, .news-content h2, .news-content h3,
+.news-content h4, .news-content h5, .news-content h6 {
+  color: #0f172a;
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 1.6em 0 0.6em;
+}
+.news-content h1 { font-size: 1.9rem; }
+.news-content h2 { font-size: 1.55rem; }
+.news-content h3 { font-size: 1.3rem; }
+.news-content h4 { font-size: 1.12rem; }
+.news-content p { margin: 0 0 0.6em; }
+.news-content a { color: #4F46E5; text-decoration: underline; }
+.news-content ul, .news-content ol { margin: 0 0 1.1em; padding-left: 1.6em; }
+.news-content ul { list-style: disc; }
+.news-content ol { list-style: decimal; }
+.news-content li { margin: 0.3em 0; }
+.news-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 12px;
+  margin: 1.2em 0;
+}
+.news-content blockquote {
+  border-left: 4px solid #c7d2fe;
+  background: #eef2ff;
+  padding: 0.6em 1.1em;
+  margin: 1.2em 0;
+  border-radius: 0 10px 10px 0;
+  color: #475569;
+}
+.news-content figure { margin: 1.2em 0; }
+.news-content figure figcaption {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  text-align: center;
+  margin-top: 0.5em;
+}
+.news-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.2em 0;
+  font-size: 0.95rem;
+}
+.news-content th, .news-content td {
+  border: 1px solid #e2e8f0;
+  padding: 0.55em 0.8em;
+  text-align: left;
+}
+.news-content th { background: #f8fafc; font-weight: 600; }
+.news-content pre {
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 1em 1.2em;
+  border-radius: 12px;
+  overflow-x: auto;
+  margin: 1.2em 0;
+}
+.news-content code {
+  background: #f1f5f9;
+  padding: 0.15em 0.4em;
+  border-radius: 6px;
+  font-size: 0.9em;
+}
+.news-content pre code { background: transparent; padding: 0; }

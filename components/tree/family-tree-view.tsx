@@ -43,6 +43,7 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
     selectPerson,
     openSidebar,
     closeSidebar,
+    confirmDiscardChanges,
     toggleModal,
     setFocusedPerson,
     setLevelFilter,
@@ -75,19 +76,22 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
         if (isPortalOpen || isInsidePortal) {
           return
         }
-        
+
+        // Cảnh báo nếu đang sửa và có thay đổi chưa lưu.
+        if (!confirmDiscardChanges()) return
         closeSidebar()
       }
     }
 
     document.addEventListener('pointerdown', handleClickOutside)
     return () => document.removeEventListener('pointerdown', handleClickOutside)
-  }, [sidebarOpen, closeSidebar])
+  }, [sidebarOpen, closeSidebar, confirmDiscardChanges])
 
   // Handle node click event from the FamilyTreeChart
   const handleNodeClick = (personIdStr: string) => {
     const person = people.find((p) => String(p.personId) === personIdStr)
     if (person) {
+      if (!confirmDiscardChanges()) return
       selectPerson(person) // Set the selected person in global store
       openSidebar() // Open the details sidebar
     }
@@ -336,6 +340,7 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
                       className="p-3 sm:p-4 rounded-lg border cursor-pointer hover:shadow-md transition-shadow flex"
                       style={{ backgroundColor: getPersonColor(person) }}
                       onClick={() => {
+                        if (!confirmDiscardChanges()) return
                         selectPerson(person)
                         openSidebar()
                       }}

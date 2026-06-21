@@ -28,6 +28,8 @@ export default function PersonSidebar({ chartId }: Props) {
     fetchData,
     fetchPersonDetail,
     updatePersonLocally,
+    setEditDirty,
+    confirmDiscardChanges,
   } = useFamilyTreeStore()
 
   const [showAddChildModal, setShowAddChildModal] = useState(false)
@@ -37,6 +39,8 @@ export default function PersonSidebar({ chartId }: Props) {
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [editPhotoUrl, setEditPhotoUrl] = useState<string | null>(null)
+  // File ảnh mới được chọn (chưa upload). Chỉ upload khi bấm "Lưu".
+  const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [editForm, setEditForm] = useState({
     name: "",
     gender: "M" as "M" | "F" | "O",
@@ -71,9 +75,49 @@ export default function PersonSidebar({ chartId }: Props) {
         description: personDetail.description || "",
       })
       setEditPhotoUrl(personDetail.photoUrl || null)
+      setPhotoFile(null)
       setError(null)
     }
   }, [personDetail, isEditing])
+
+  // Thoát chế độ sửa khi sidebar đóng (bấm X, click ra ngoài) để không kẹt dirty.
+  useEffect(() => {
+    if (!isOpen) setIsEditing(false)
+  }, [isOpen])
+
+  // Đồng bộ cờ "có thay đổi chưa lưu" lên store để các nơi khác chặn thoát.
+  useEffect(() => {
+    if (!isEditing || !personDetail) {
+      setEditDirty(false)
+      return
+    }
+    const dirty =
+      editForm.name !== (personDetail.name || "") ||
+      editForm.gender !== (personDetail.gender || "M") ||
+      editForm.level !== (personDetail.level?.toString() || "") ||
+      editForm.dob !== (personDetail.dob || "") ||
+      editForm.dod !== (personDetail.dod || "") ||
+      editForm.description !== (personDetail.description || "") ||
+      photoFile !== null ||
+      (editPhotoUrl || null) !== (personDetail.photoUrl || null)
+    setEditDirty(dirty)
+  }, [isEditing, personDetail, editForm, photoFile, editPhotoUrl, setEditDirty])
+
+  // Dọn cờ dirty khi unmount; cảnh báo khi đóng/refresh tab lúc đang có thay đổi.
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (useFamilyTreeStore.getState().isEditDirty) {
+        // Gọi preventDefault() là đủ để trình duyệt hiện hộp thoại xác nhận rời trang
+        // (thay cho e.returnValue đã deprecated).
+        e.preventDefault()
+      }
+    }
+    window.addEventListener("beforeunload", handleBeforeUnload)
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload)
+      setEditDirty(false)
+    }
+  }, [setEditDirty])
 
   if (!person) return null
 
@@ -83,30 +127,6 @@ export default function PersonSidebar({ chartId }: Props) {
     await fetchData(chartId, false)
     if (person) {
       await fetchPersonDetail(chartId, person.personId)
-    }
-  }
-
-  // ── avatar ───────────────────────────────────────────────────────
-  const handleAvatarChange = async (newUrl: string | null) => {
-    setEditPhotoUrl(newUrl)
-    const originalPhotoUrl = person.photoUrl
-    // Optimistic update for avatar
-    updatePersonLocally(person.personId, { photoUrl: newUrl ?? undefined })
-    try {
-      const token = useAuthStore.getState().token
-      if (!token) throw new Error("Yêu cầu đăng nhập")
-
-      await personApi.updatePerson(token, chartId, person.personId, {
-        photoUrl: newUrl ?? "",
-      })
-      // Refresh person detail to keep sidebar relationships in sync
-      await fetchPersonDetail(chartId, person.personId)
-    } catch (err) {
-      console.error("Avatar save error:", err)
-      // Rollback on failure
-      updatePersonLocally(person.personId, { photoUrl: originalPhotoUrl ?? undefined })
-      setEditPhotoUrl(originalPhotoUrl ?? null)
-      setError("Lưu ảnh đại diện thất bại. Vui lòng thử lại.")
     }
   }
 
@@ -121,6 +141,21 @@ export default function PersonSidebar({ chartId }: Props) {
     if (isNaN(levelNum) || levelNum <= 0) {
       setError("Đời phải là số nguyên dương")
       return
+    }
+
+    setIsSaving(true)
+
+    // Hoãn upload: chỉ đẩy ảnh mới lên Cloudinary đúng lúc lưu. Ảnh cũ do backend dọn.
+    let finalPhotoUrl = editPhotoUrl
+    if (photoFile) {
+      try {
+        finalPhotoUrl = await cloudinary.uploadImage(photoFile)
+      } catch (err) {
+        console.error("Avatar upload error:", err)
+        setError("Tải ảnh lên thất bại. Vui lòng thử lại.")
+        setIsSaving(false)
+        return
+      }
     }
 
     // Save original data for rollback
@@ -142,13 +177,12 @@ export default function PersonSidebar({ chartId }: Props) {
       dob: editForm.dob || null,
       dod: editForm.dod || null,
       description: editForm.description || null,
-      photoUrl: editPhotoUrl ?? null,
+      photoUrl: finalPhotoUrl ?? null,
     }
 
     // Optimistic update: apply immediately
     updatePersonLocally(person.personId, patch)
     setIsEditing(false)
-    setIsSaving(true)
 
     try {
       const token = useAuthStore.getState().token
@@ -156,8 +190,9 @@ export default function PersonSidebar({ chartId }: Props) {
 
       await personApi.updatePerson(token, chartId, person.personId, {
         ...patch,
-        photoUrl: editPhotoUrl ?? "",
+        photoUrl: finalPhotoUrl ?? "",
       })
+      setPhotoFile(null)
       // Refresh person detail to keep sidebar relationships in sync
       await fetchPersonDetail(chartId, person.personId)
     } catch {
@@ -183,8 +218,15 @@ export default function PersonSidebar({ chartId }: Props) {
       })
       setEditPhotoUrl(detail.photoUrl || null)
     }
+    setPhotoFile(null)
     setIsEditing(false)
     setError(null)
+  }
+
+  // ── close (X / có thể có thay đổi chưa lưu) ──────────────────────
+  const handleRequestClose = () => {
+    if (!confirmDiscardChanges()) return
+    closeSidebar()
   }
 
   // ── delete person ────────────────────────────────────────────────
@@ -196,11 +238,7 @@ export default function PersonSidebar({ chartId }: Props) {
       const token = useAuthStore.getState().token
       if (!token) throw new Error("Yêu cầu đăng nhập")
 
-      // Delete avatar from cloudinary
-      if (detail?.photoUrl) {
-        await cloudinary.deleteImage(detail.photoUrl)
-      }
-
+      // Ảnh đại diện trên Cloudinary do backend tự dọn khi xoá thành viên.
       await personApi.deletePerson(token, chartId, person.personId)
       await fetchData(chartId, false)
       closeSidebar()
@@ -262,7 +300,7 @@ export default function PersonSidebar({ chartId }: Props) {
           setIsEditing={setIsEditing}
           deletePerson={deletePerson}
           isDeleting={isDeleting}
-          closeSidebar={closeSidebar}
+          closeSidebar={handleRequestClose}
         />
 
         <div className="flex-1 overflow-y-auto">
@@ -273,12 +311,13 @@ export default function PersonSidebar({ chartId }: Props) {
                 error={error}
                 setError={setError}
                 editPhotoUrl={editPhotoUrl}
-                setEditPhotoUrl={handleAvatarChange}
+                onPhotoFileChange={setPhotoFile}
+                onRemovePhoto={() => setEditPhotoUrl(null)}
                 isSaving={isSaving}
-              editForm={editForm}
-              setEditForm={setEditForm}
-              handleSave={handleSave}
-              handleCancelEdit={handleCancelEdit}
+                editForm={editForm}
+                setEditForm={setEditForm}
+                handleSave={handleSave}
+                handleCancelEdit={handleCancelEdit}
             />
           ) : (
             <SidebarViewMode

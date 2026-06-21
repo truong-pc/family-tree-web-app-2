@@ -1,91 +1,86 @@
 "use client"
 
-import React, { useRef, useState } from "react"
-import { Camera, Loader2, Trash2, RefreshCw } from "lucide-react"
+import React, { useEffect, useRef, useState } from "react"
+import { Camera, Trash2, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import Image from "next/image"
 import * as cloudinary from "@/lib/services/cloudinary"
 
 interface CustomAvatarUploadProps {
-  /** Current photo URL (can be null for no photo) */
+  /** Ảnh đã lưu trước đó (hiển thị khi chưa chọn ảnh mới). Null nếu chưa có. */
   photoUrl: string | null
-  /** Callback when photo changes (new URL or null when removed) */
-  onPhotoChange: (url: string | null) => void
+  /**
+   * Gọi khi file được chọn (File) hoặc bị gỡ (null).
+   * LƯU Ý: component KHÔNG upload — ảnh chỉ thực sự lên Cloudinary lúc lưu form,
+   * nên huỷ/đóng modal sẽ không để lại ảnh mồ côi.
+   */
+  onFileChange: (file: File | null) => void
+  /** Gọi khi người dùng gỡ ảnh ĐÃ lưu, để parent xoá luôn `photoUrl`. */
+  onRemove?: () => void
   /** Whether the upload controls are disabled */
   disabled?: boolean
   /** Avatar size in px (default 96) */
   size?: number
   /** Additional className for the wrapper */
   className?: string
-  /** Called with error message if upload/validation fails */
+  /** Called with error message if validation fails */
   onError?: (message: string) => void
 }
 
 export default function CustomAvatarUpload({
   photoUrl,
-  onPhotoChange,
+  onFileChange,
+  onRemove,
   disabled = false,
   size = 96,
   className = "",
   onError,
 }: CustomAvatarUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [isUploading, setIsUploading] = useState(false)
+  // Preview cục bộ của file vừa chọn (chưa upload), tạo bằng URL.createObjectURL.
+  const [localPreview, setLocalPreview] = useState<string | null>(null)
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Dọn object URL khi preview đổi hoặc khi unmount để tránh rò bộ nhớ.
+  useEffect(() => {
+    return () => {
+      if (localPreview) URL.revokeObjectURL(localPreview)
+    }
+  }, [localPreview])
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Validate
     const validationError = cloudinary.validateImageFile(file)
     if (validationError) {
       onError?.(validationError)
+      if (fileInputRef.current) fileInputRef.current.value = ""
       return
     }
 
-    setIsUploading(true)
-    try {
-      // Delete old image if exists
-      if (photoUrl) {
-        await cloudinary.deleteImage(photoUrl)
-      }
-
-      const newUrl = await cloudinary.uploadImage(file)
-      onPhotoChange(newUrl)
-    } catch (error: any) {
-      console.error("Avatar upload error:", error)
-      onError?.(error.message || "Tải ảnh lên thất bại")
-    } finally {
-      setIsUploading(false)
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ""
-      }
-    }
+    // Hoãn upload: chỉ giữ file + preview cục bộ. (object URL cũ được effect dọn.)
+    setLocalPreview(URL.createObjectURL(file))
+    onFileChange(file)
+    if (fileInputRef.current) fileInputRef.current.value = ""
   }
 
-  const handleRemove = async () => {
-    if (!photoUrl) return
-    setIsUploading(true)
-    try {
-      await cloudinary.deleteImage(photoUrl)
-      onPhotoChange(null)
-    } catch (error: any) {
-      console.error("Avatar remove error:", error)
-      onError?.(error.message || "Xóa ảnh thất bại")
-    } finally {
-      setIsUploading(false)
-    }
+  const handleRemove = () => {
+    setLocalPreview(null)
+    onFileChange(null)
+    onRemove?.()
   }
+
+  const displaySrc = localPreview || photoUrl || "/placeholder-user.jpg"
+  const hasPhoto = !!(localPreview || photoUrl)
 
   return (
     <div className={`flex flex-col items-center gap-2 ${className}`}>
       {/* Avatar preview */}
       <div className="relative group" style={{ width: size, height: size }}>
-        <div
-          className="w-full h-full rounded-full overflow-hidden border-2 border-border bg-muted"
-        >
-          <Image
-            src={photoUrl || "/placeholder-user.jpg"}
+        <div className="w-full h-full rounded-full overflow-hidden border-2 border-border bg-muted">
+          {/* Dùng <img> thường vì nguồn có thể là blob: URL (preview cục bộ). */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={displaySrc}
             alt="Avatar"
             width={size}
             height={size}
@@ -94,7 +89,7 @@ export default function CustomAvatarUpload({
         </div>
 
         {/* Upload overlay on hover */}
-        {!disabled && !isUploading && (
+        {!disabled && (
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
@@ -102,13 +97,6 @@ export default function CustomAvatarUpload({
           >
             <Camera className="h-5 w-5 text-white" />
           </button>
-        )}
-
-        {/* Loading overlay */}
-        {isUploading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
-            <Loader2 className="h-6 w-6 text-white animate-spin" />
-          </div>
         )}
       </div>
 
@@ -126,10 +114,10 @@ export default function CustomAvatarUpload({
           variant="outline"
           size="sm"
           onClick={() => fileInputRef.current?.click()}
-          disabled={disabled || isUploading}
+          disabled={disabled}
           className="text-xs"
         >
-          {photoUrl ? (
+          {hasPhoto ? (
             <RefreshCw className="h-3.5 w-3.5" />
           ) : (
             <>
@@ -138,13 +126,13 @@ export default function CustomAvatarUpload({
             </>
           )}
         </Button>
-        {photoUrl && (
+        {hasPhoto && (
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={handleRemove}
-            disabled={disabled || isUploading}
+            disabled={disabled}
             className="text-xs text-destructive hover:text-destructive"
           >
             <Trash2 className="h-3.5 w-3.5" />

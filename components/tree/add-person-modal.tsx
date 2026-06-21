@@ -22,6 +22,7 @@ import {
 import { DatePicker } from "@/components/ui/date-picker"
 import CustomAvatarUpload from "@/components/ui/custom-avatar-upload"
 import * as personApi from "@/lib/api/person"
+import * as cloudinary from "@/lib/services/cloudinary"
 import { useFamilyTreeStore } from "@/lib/stores/family-tree-store"
 import { useAuthStore } from "@/lib/stores/auth-store"
 
@@ -38,7 +39,7 @@ export default function AddPersonModal({ chartId }: AddPersonModalProps) {
   const [dob, setDob] = useState("")
   const [dod, setDod] = useState("")
   const [description, setDescription] = useState("")
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null)
+  const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -68,6 +69,13 @@ export default function AddPersonModal({ chartId }: AddPersonModalProps) {
       if (!token) throw new Error("Yêu cầu đăng nhập")
 
       const levelNum = parseInt(level)
+
+      // Hoãn upload: chỉ đẩy ảnh lên Cloudinary khi người dùng thực sự lưu.
+      let photoUrl: string | null = null
+      if (photoFile) {
+        photoUrl = await cloudinary.uploadImage(photoFile)
+      }
+
       await personApi.createPerson(token, chartId, {
         name: name.trim(),
         gender,
@@ -75,7 +83,7 @@ export default function AddPersonModal({ chartId }: AddPersonModalProps) {
         dob: dob || null,
         dod: dod || null,
         description: description.trim() || null,
-        photoUrl: photoUrl || null,
+        photoUrl,
       })
 
       // Reset form
@@ -97,7 +105,7 @@ export default function AddPersonModal({ chartId }: AddPersonModalProps) {
     setDob("")
     setDod("")
     setDescription("")
-    setPhotoUrl(null)
+    setPhotoFile(null)
     setError(null)
   }
 
@@ -124,8 +132,8 @@ export default function AddPersonModal({ chartId }: AddPersonModalProps) {
             {/* Avatar Upload */}
             <div className="flex justify-center">
               <CustomAvatarUpload
-                photoUrl={photoUrl}
-                onPhotoChange={setPhotoUrl}
+                photoUrl={null}
+                onFileChange={setPhotoFile}
                 disabled={isSubmitting}
                 size={80}
                 onError={setError}
