@@ -82,10 +82,10 @@ export function SidebarViewMode({
           size="icon"
           onClick={() => deleteRelationship(type, rel)}
           disabled={deleting}
-          className="opacity-0 group-hover:opacity-100 transition-all h-8 w-8 text-destructive hover:text-white hover:bg-destructive flex-shrink-0 shadow-sm"
+          className="transition-all h-6 w-6 text-destructive hover:text-white hover:bg-destructive flex-shrink-0 shadow-sm"
           title="Xóa"
         >
-          {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
+          {deleting ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3.5 w-3.5" />}
         </Button>
       </div>
     )
