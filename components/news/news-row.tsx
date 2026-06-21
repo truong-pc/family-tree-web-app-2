@@ -69,12 +69,12 @@ export default function NewsRow({ post, canModify, onView, onEdit, onDelete }: N
 
       {/* Trạng thái */}
       {post.public ? (
-        <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-full shrink-0" style={{ background: "rgba(16,185,129,0.12)", color: "#047857" }}>
-          <Globe className="w-3.5 h-3.5" /> Công khai
+        <span className="inline-flex items-center gap-1.5 text-xs px-2 sm:px-2.5 py-1.5 rounded-full shrink-0" style={{ background: "rgba(16,185,129,0.12)", color: "#047857" }}>
+          <Globe className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Công khai</span>
         </span>
       ) : (
-        <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-full shrink-0" style={{ background: "rgba(100,116,139,0.14)", color: "#475569" }}>
-          <Lock className="w-3.5 h-3.5" /> Nội bộ
+        <span className="inline-flex items-center gap-1.5 text-xs px-2 sm:px-2.5 py-1.5 rounded-full shrink-0" style={{ background: "rgba(100,116,139,0.14)", color: "#475569" }}>
+          <Lock className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Nội bộ</span>
         </span>
       )}
 

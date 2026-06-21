@@ -1,8 +1,10 @@
 "use client"
 
-import { use } from 'react';
-import Link from 'next/link';
+import { use, useEffect, useState } from 'react';
+import { useAuthStore } from '@/lib/stores/auth-store';
 import FamilyTreeView from '@/components/tree/family-tree-view';
+import PublicNavbar from '@/components/public-navbar';
+import DashboardNavbar from '@/components/dashboard-navbar';
 
 interface PublishedTreePageProps {
   params: Promise<{
@@ -12,27 +14,16 @@ interface PublishedTreePageProps {
 
 export default function PublishedTreePage({ params }: PublishedTreePageProps) {
   const { chartId } = use(params);
+  const { user, token } = useAuthStore()
+    const [mounted, setMounted] = useState(false)
+    useEffect(() => setMounted(true), [])
+    const isAuthed = mounted && !!user && !!token
+  
+
   return (
     <>
       {/* Simple Navbar for Published Tree */}
-      <nav className="border-b border-border bg-card">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition">
-              <img src="/icon.png" alt="Logo" className="w-10 h-10 object-contain" />
-              <span className="font-bold text-lg text-foreground">Gia Phả</span>
-            </Link>
-            <div className="flex items-center gap-4">
-              <Link href="/" className="text-foreground hover:text-primary transition font-medium">
-                Trang Chủ
-              </Link>
-              <Link href="/login" className="text-foreground hover:text-primary transition font-medium">
-                Đăng Nhập
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
+      {isAuthed ? <DashboardNavbar /> : <PublicNavbar />}
       <FamilyTreeView chartId={chartId} readOnly={true} />
     </>
   );

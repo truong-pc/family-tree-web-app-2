@@ -78,10 +78,11 @@ export default function HomePage() {
             </p>
           </Card>
           <Card className="p-6 border border-border">
-            <div className="text-3xl mb-4">🔒</div>
-            <h3 className="text-xl font-semibold text-foreground mb-2">Bảo Mật Cao</h3>
+            <div className="text-3xl mb-4">📢</div>
+            <h3 className="text-xl font-semibold text-foreground mb-2">Tin Tức & Sự Kiện Dòng Họ</h3>
             <p className="text-muted-foreground">
-              Dữ liệu gia đình của bạn được bảo vệ bằng các tiêu chuẩn bảo mật tối tân.
+              Lưu giữ từng khoảnh khắc của dòng họ: chia sẻ tin tức, kể những câu chuyện đáng nhớ và đánh dấu các
+              sự kiện (ngày giỗ, ngày sum họp) — để mọi thế hệ cùng nhớ về cội nguồn.
             </p>
           </Card>
           <Card className="p-6 border border-border">

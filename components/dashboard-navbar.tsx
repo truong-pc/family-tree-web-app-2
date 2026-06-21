@@ -59,7 +59,7 @@ export default function DashboardNavbar() {
           {/* Navigation Links */}
           <div className="flex items-center gap-1">
             <Link href="/dashboard" className="px-3 py-2 rounded-md text-foreground hover:text-primary hover:bg-secondary transition font-medium">
-              Trang Chủ
+              Dashboard
             </Link>
             <Link href="/news" className="px-3 py-2 rounded-md text-foreground hover:text-primary hover:bg-secondary transition font-medium">
               Tin Tức
