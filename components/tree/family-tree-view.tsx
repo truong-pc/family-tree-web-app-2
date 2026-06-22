@@ -1,12 +1,12 @@
 "use client"
 
 import React, { useEffect, useRef, useCallback } from "react"
-import { Search, Plus, X, Users } from "lucide-react"
+import { Search, Plus, X, Users, Download, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import Image from "next/image"
-import FamilyTreeChart from "./family-tree-graph"
+import FamilyTreeChart, { type FamilyTreeChartHandle } from "./family-tree-graph"
 import PersonSidebar from "@/components/sidebar/person-sidebar"
 import AddPersonModal from "./add-person-modal"
 import AddRelationshipModal from "./add-relationship-modal"
@@ -51,6 +51,8 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
   } = useFamilyTreeStore()
 
   const sidebarRef = useRef<HTMLDivElement>(null)
+  // Ref to the tree chart for triggering imperative actions (export, reset zoom)
+  const chartRef = useRef<FamilyTreeChartHandle>(null)
 
   // Handle click outside sidebar to close it
   useEffect(() => {
@@ -214,24 +216,26 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
                     )}
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      if (typeof window !== 'undefined' && (window as any).familyTreeResetZoom) {
-                        (window as any).familyTreeResetZoom()
-                      }
-                    }}
-                    className="text-gray-500 hover:text-gray-700"
-                    title="Reset zoom"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
-                      <path d="M21 3v5h-5"/>
-                      <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
-                      <path d="M3 21v-5h5"/>
-                    </svg>
-                  </Button>
+                  <div className="flex items-center space-x-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => chartRef.current?.exportImage()}
+                      className="text-gray-500 hover:text-gray-700"
+                      title="Tải ảnh gia phả"
+                    >
+                      <Download className="h-5 w-5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => chartRef.current?.resetZoom()}
+                      className="text-gray-500 hover:text-gray-700"
+                      title="Reset zoom"
+                    >
+                      <RefreshCw className="h-5 w-5" />
+                    </Button>
+                  </div>
                 </div>
                 {/* Search Bar for Tree Visualization */}
                 <div className="relative w-full sm:w-96">
@@ -285,11 +289,11 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
               </CardHeader>
               <CardContent className="pt-1 px-1 pb-1 sm:pt-2 sm:px-6 sm:pb-6">
                 <FamilyTreeChart
+                  ref={chartRef}
                   data={familyTreeData}
                   onNodeClick={handleNodeClick}
                   focusedPerson={focusedPerson}
                   getPersonColor={getPersonColorById}
-                  onResetZoom={() => {}}
                   chartId={chartId}
                 />
               </CardContent>

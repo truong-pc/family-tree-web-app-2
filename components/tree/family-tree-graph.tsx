@@ -1,9 +1,25 @@
 "use client"
 
-import { useRef, useEffect, useState, useCallback } from "react"
+import { useRef, useEffect, useState, useCallback, forwardRef, useImperativeHandle } from "react"
 import * as d3 from "d3"
-import { Button } from "@/components/ui/button"
-import { RotateCcw } from "lucide-react"
+
+// Convert an image URL (avatar) to a base64 data URL so it can be embedded
+// into the cloned SVG. Without this, drawing external images onto a canvas
+// "taints" it and the export (toBlob) will throw a security error.
+async function imageToDataUrl(url: string): Promise<string> {
+  try {
+    const res = await fetch(url)
+    const blob = await res.blob()
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(reader.result as string)
+      reader.onerror = reject
+      reader.readAsDataURL(blob)
+    })
+  } catch {
+    return "" // fall back: leave avatar empty rather than break the whole export
+  }
+}
 
 // Input data structure for the family tree diagram (includes nodes and links)
 interface FamilyTreeData {
@@ -17,8 +33,13 @@ interface Props {
   onNodeClick: (personName: string) => void
   focusedPerson: string | null
   getPersonColor: (name: string) => string
-  onResetZoom?: () => void
   chartId?: string
+}
+
+// Imperative actions the parent can trigger via a ref (e.g. toolbar buttons)
+export interface FamilyTreeChartHandle {
+  exportImage: () => void
+  resetZoom: () => void
 }
 
 // Node structure used during tree layout calculations
@@ -33,7 +54,10 @@ interface TreeNode {
   blockWidth: number
 }
 
-export default function FamilyTreeChart({ data, onNodeClick, focusedPerson, getPersonColor, onResetZoom, chartId }: Props) {
+const FamilyTreeChart = forwardRef<FamilyTreeChartHandle, Props>(function FamilyTreeChart(
+  { data, onNodeClick, focusedPerson, getPersonColor, chartId },
+  ref,
+) {
   const svgRef = useRef<SVGSVGElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   // Manage D3 zoom behavior
@@ -53,19 +77,6 @@ export default function FamilyTreeChart({ data, onNodeClick, focusedPerson, getP
     initialTransformRef.current = null
     lastChartIdRef.current = chartId
   }
-
-  // Register global zoom reset function on window object for external controls
-  useEffect(() => {
-    if (onResetZoom) {
-      const resetFunc = () => {
-        if (!svgRef.current || !zoomRef.current || !initialTransformRef.current) return
-        const svg = d3.select(svgRef.current)
-        svg.transition().duration(750).call(zoomRef.current.transform, initialTransformRef.current)
-        savedTransformRef.current = initialTransformRef.current
-      }
-      ;(window as any).familyTreeResetZoom = resetFunc
-    }
-  }, [onResetZoom])
 
   // Update the SVG dimensions based on the container size
   useEffect(() => {
@@ -511,6 +522,117 @@ export default function FamilyTreeChart({ data, onNodeClick, focusedPerson, getP
     savedTransformRef.current = initialTransformRef.current
   }, [])
 
+  // Track export progress to disable the button and show feedback
+  const [isExporting, setIsExporting] = useState(false)
+
+  // Export the entire family tree (not just the visible viewport) to a PNG download
+  const handleExportImage = useCallback(async () => {
+    if (!svgRef.current || isExporting) return
+    setIsExporting(true)
+    try {
+      const svgNode = svgRef.current
+      // The first <g> is the zoom/pan container holding the whole tree
+      const gNode = svgNode.querySelector("g") as SVGGElement | null
+      if (!gNode) return
+
+      // getBBox() returns the real bounds of the tree in its own coordinate
+      // system (ignoring the current zoom/pan transform), so we can capture all of it
+      const bbox = gNode.getBBox()
+      const padding = 40
+      const exportWidth = bbox.width + padding * 2
+      const exportHeight = bbox.height + padding * 2
+
+      // Clone the SVG so we don't disturb the on-screen version
+      const clone = svgNode.cloneNode(true) as SVGSVGElement
+      clone.setAttribute("width", String(exportWidth))
+      clone.setAttribute("height", String(exportHeight))
+      clone.setAttribute("viewBox", `0 0 ${exportWidth} ${exportHeight}`)
+
+      // Reset the main group's transform so the whole tree sits inside the export area
+      const gClone = clone.querySelector("g") as SVGGElement
+      gClone.setAttribute("transform", `translate(${-bbox.x + padding}, ${-bbox.y + padding})`)
+
+      // Add a white background (SVG is transparent by default)
+      const bgRect = document.createElementNS("http://www.w3.org/2000/svg", "rect")
+      bgRect.setAttribute("x", "0")
+      bgRect.setAttribute("y", "0")
+      bgRect.setAttribute("width", String(exportWidth))
+      bgRect.setAttribute("height", String(exportHeight))
+      bgRect.setAttribute("fill", "#ffffff")
+      clone.insertBefore(bgRect, clone.firstChild)
+
+      // Convert every avatar image to a base64 data URL to avoid a tainted canvas
+      const images = Array.from(clone.querySelectorAll("image"))
+      await Promise.all(
+        images.map(async (img) => {
+          const href =
+            img.getAttribute("href") ||
+            img.getAttributeNS("http://www.w3.org/1999/xlink", "href") ||
+            ""
+          const dataUrl = await imageToDataUrl(href)
+          if (dataUrl) {
+            img.setAttribute("href", dataUrl)
+            img.removeAttributeNS("http://www.w3.org/1999/xlink", "href")
+          }
+        }),
+      )
+
+      // Serialize the clone and load it into an <img> via a blob URL.
+      // Blob URL (not base64) keeps Vietnamese names with accents intact.
+      const svgString = new XMLSerializer().serializeToString(clone)
+      const svgBlob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" })
+      const svgUrl = URL.createObjectURL(svgBlob)
+
+      await new Promise<void>((resolve, reject) => {
+        const img = new Image()
+        img.onload = () => {
+          // Render at 2x for a crisp, high-resolution image
+          const scale = 2
+          const canvas = document.createElement("canvas")
+          canvas.width = exportWidth * scale
+          canvas.height = exportHeight * scale
+          const ctx = canvas.getContext("2d")
+          if (!ctx) {
+            reject(new Error("Canvas context unavailable"))
+            return
+          }
+          ctx.scale(scale, scale)
+          ctx.drawImage(img, 0, 0)
+          URL.revokeObjectURL(svgUrl)
+
+          canvas.toBlob((blob) => {
+            if (!blob) {
+              reject(new Error("Export failed"))
+              return
+            }
+            const link = document.createElement("a")
+            link.href = URL.createObjectURL(blob)
+            link.download = `gia-pha-${new Date().toISOString().slice(0, 10)}.png`
+            link.click()
+            URL.revokeObjectURL(link.href)
+            resolve()
+          }, "image/png")
+        }
+        img.onerror = () => {
+          URL.revokeObjectURL(svgUrl)
+          reject(new Error("Failed to render SVG"))
+        }
+        img.src = svgUrl
+      })
+    } catch (err) {
+      console.error("Export image failed:", err)
+    } finally {
+      setIsExporting(false)
+    }
+  }, [isExporting])
+
+  // Expose imperative actions to the parent via ref so toolbar buttons can
+  // trigger export/reset without leaking functions onto the global window.
+  useImperativeHandle(ref, () => ({
+    exportImage: handleExportImage,
+    resetZoom: handleResetZoom,
+  }), [handleExportImage, handleResetZoom])
+
   return (
     <div ref={containerRef} className="w-full overflow-hidden">
       <svg ref={svgRef} className="border rounded-lg bg-white w-full"></svg>
@@ -530,4 +652,6 @@ export default function FamilyTreeChart({ data, onNodeClick, focusedPerson, getP
       </div>
     </div>
   )
-}
+})
+
+export default FamilyTreeChart
