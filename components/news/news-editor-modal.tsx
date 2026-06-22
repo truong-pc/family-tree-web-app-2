@@ -426,7 +426,7 @@ export default function NewsEditorModal({
                   className="px-5 py-2.5 rounded-lg font-semibold border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition-colors inline-flex items-center gap-2 disabled:opacity-60"
                 >
                   {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-                  <Lock className="w-4 h-4" /> Lưu nháp
+                  <Lock className="w-4 h-4" /> Lưu nội bộ
                 </button>
                 <button
                   type="button"

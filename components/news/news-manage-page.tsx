@@ -108,7 +108,7 @@ export default function NewsManagePage({ chartId }: { chartId: string }) {
       }
       setPosts((prev) => [card, ...prev])
       setCreating(false)
-      toast({ title: payload.public ? "Đã đăng bài" : "Đã lưu nháp", description: payload.title })
+      toast({ title: payload.public ? "Đã đăng bài" : "Đã lưu nội bộ", description: payload.title })
     } catch (err: any) {
       toast({ variant: "destructive", title: "Lưu thất bại", description: extractApiError(err, "Không thể lưu bài viết.") })
     } finally {
