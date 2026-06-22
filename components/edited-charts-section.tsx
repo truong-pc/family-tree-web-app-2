@@ -75,7 +75,13 @@ export default function EditedChartsSection() {
 
   if (charts.length === 0) {
     return (
-      <Card className="p-12 text-center border border-border">
+      <Card
+        className="relative overflow-hidden p-12 text-center border border-white/40 shadow-md"
+        style={{
+          background:
+            "linear-gradient(120deg, rgba(56,189,248,0.3) 0%, rgba(110, 56, 248, 0.3) 100%)",
+        }}
+      >
         <p className="text-muted-foreground mb-4">
           Bạn chưa được phân quyền chỉnh sửa gia phả nào
         </p>
@@ -92,7 +98,11 @@ export default function EditedChartsSection() {
       {charts.map((chart) => (
         <Card
           key={chart._id}
-          className="p-6 border border-border hover:border-primary/50 transition-colors"
+          className="relative overflow-hidden p-6 border border-white/40 shadow-md hover:border-primary/50 transition-colors"
+          style={{
+            background:
+              "linear-gradient(120deg, rgba(56,189,248,0.3) 0%, rgba(110, 56, 248, 0.3) 100%)",
+          }}
         >
           <div className="flex items-start justify-between mb-2">
             <h3 className="text-lg font-semibold text-foreground flex-1">
@@ -117,17 +127,17 @@ export default function EditedChartsSection() {
           </div>
           <div className="flex flex-col gap-2">
             <Link href={`/dashboard/${chart._id}/tree`}>
-              <Button variant="outline" className="w-full bg-transparent">
+              <Button variant="outline" className="w-full bg-white/30 backdrop-blur-lg border border-white/50">
                 Chỉnh Sửa
               </Button>
             </Link>
             <Link href={`/dashboard/${chart._id}/events`}>
-              <Button variant="outline" className="w-full bg-transparent">
+              <Button variant="outline" className="w-full bg-white/30 backdrop-blur-lg border border-white/50">
                 Xem Sự Kiện
               </Button>
             </Link>
             <Link href={`/dashboard/${chart._id}/news`}>
-              <Button variant="outline" className="w-full bg-transparent">
+              <Button variant="outline" className="w-full bg-white/30 backdrop-blur-lg border border-white/50">
                 Quản Lý Tin Tức
               </Button>
             </Link>

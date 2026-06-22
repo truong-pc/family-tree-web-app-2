@@ -166,7 +166,13 @@ export default function UserChartSection() {
   // --- VIEW: NO CHART (CREATE MODE) ---
   if (!chart) {
     return (
-      <Card className="border-dashed border-2">
+      <Card
+        className="relative overflow-hidden border border-white/40 shadow-md"
+        style={{
+          background:
+            "linear-gradient(120deg, rgba(96,165,250,0.3) 0%, rgba(246,197,72,0.3) 100%)",
+        }}
+      >
         <CardHeader className="text-center">
           <CardTitle>Bạn chưa có Gia Phả nào</CardTitle>
           <CardDescription>Bắt đầu tạo cây gia phả cho dòng họ của bạn ngay hôm nay.</CardDescription>
@@ -205,7 +211,13 @@ export default function UserChartSection() {
 
   // --- VIEW: CHART MODAL (MANAGE MODE) ---
   return (
-    <Card className="border-primary/20 shadow-md">
+    <Card
+      className="relative overflow-hidden border border-white/40 shadow-md"
+      style={{
+        background:
+          "linear-gradient(120deg, rgba(96,165,250,0.3) 0%, rgba(246,197,72,0.3) 100%)",
+      }}
+    >
       <CardHeader>
         <div className="flex justify-between items-start">
           <div>

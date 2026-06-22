@@ -60,7 +60,13 @@ export default function PublishedCharts() {
 
   if (charts.length === 0) {
     return (
-      <Card className="p-12 text-center border border-border">
+      <Card
+        className="relative overflow-hidden p-12 text-center border border-white/40 shadow-md"
+        style={{
+          background:
+            "linear-gradient(120deg, rgba(129,140,248,0.3) 0%, rgba(56,189,248,0.3) 100%)",
+        }}
+      >
         <p className="text-muted-foreground mb-4">Chưa có gia phả nào được chia sẻ công khai</p>
         <Link href="/register">
           <Button>Tạo Gia Phả Đầu Tiên Của Bạn</Button>
@@ -72,12 +78,19 @@ export default function PublishedCharts() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {charts.map((chart) => (
-        <Card key={chart._id} className="p-6 border border-border hover:border-primary/50 transition-colors">
+        <Card
+          key={chart._id}
+          className="relative overflow-hidden p-6 border border-white/40 shadow-md hover:border-primary/50 transition-colors"
+          style={{
+            background:
+              "linear-gradient(120deg, rgba(202, 123, 255, 0.3) 0%, rgba(56,189,248,0.3) 100%)",
+          }}
+        >
           <h3 className="text-lg font-semibold text-foreground mb-2">{chart.name || "Không có tên"}</h3>
           <p className="text-muted-foreground text-sm mb-4 line-clamp-3">{chart.description || "Không có mô tả"}</p>
           <p className="text-xs text-muted-foreground mb-4">Chia sẻ bởi: {chart.ownerName || "Ẩn danh"}</p>
           <Link href={`/published-chart/${chart._id}/tree`}>
-            <Button variant="outline" className="w-full bg-transparent">
+            <Button variant="outline" className="w-full bg-white/30 backdrop-blur-lg border border-white/50">
               Xem Sơ Đồ Phả Hệ
             </Button>
           </Link>
