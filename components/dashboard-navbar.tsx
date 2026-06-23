@@ -7,6 +7,7 @@ import { useState, useEffect, useRef } from "react"
 import * as authApi from "@/lib/api/auth"
 import { UserProfileDialog } from "@/components/user-profile-dialog"
 import { UserChangePasswordDialog } from "@/components/user-changepassword-dialog"
+import { Settings, KeyRound, LogOut } from "lucide-react"
 
 export default function DashboardNavbar() {
   const router = useRouter()
@@ -77,29 +78,34 @@ export default function DashboardNavbar() {
               {isDropdownOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg z-50">
                   <div className="p-2">
-                    <p className="px-4 py-2 text-sm text-muted-foreground border-b border-border">{user?.fullName || user?.email}</p>
                     <button
                       onClick={() => {
                         setIsDropdownOpen(false)
                         setIsProfileOpen(true)
                       }}
-                      className="w-full text-left px-4 py-2 hover:bg-secondary rounded text-foreground transition"
+                      className="w-full flex items-center justify-between gap-3 px-4 py-2 hover:bg-secondary rounded transition border-b border-border"
                     >
-                      Thông Tin Tài Khoản
+                      <div className="text-left min-w-0">
+                        <p className="text-sm font-semibold text-foreground truncate">{user?.fullName || user?.email}</p>
+                        <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                      </div>
+                      <Settings className="w-5 h-5 text-muted-foreground shrink-0" />
                     </button>
                     <button
                       onClick={() => {
                         setIsDropdownOpen(false)
                         setIsChangePasswordOpen(true)
                       }}
-                      className="w-full text-left px-4 py-2 hover:bg-secondary rounded text-foreground transition"
+                      className="w-full flex items-center gap-2 text-left px-4 py-2 hover:bg-secondary rounded text-foreground transition"
                     >
+                      <KeyRound className="w-4 h-4 shrink-0" />
                       Đổi Mật Khẩu
                     </button>
                     <button
                       onClick={handleLogout}
-                      className="w-full text-left px-4 py-2 hover:bg-destructive/10 text-destructive rounded transition"
+                      className="w-full flex items-center gap-2 text-left px-4 py-2 hover:bg-destructive/10 text-destructive rounded transition"
                     >
+                      <LogOut className="w-4 h-4 shrink-0" />
                       Đăng Xuất
                     </button>
                   </div>
