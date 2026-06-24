@@ -71,9 +71,12 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
           document.querySelector('[role="menu"][data-state="open"]') ||
           document.querySelector('[role="dialog"][data-state="open"]')
         
-        // Also check if the click target itself is inside a portal
-        const isInsidePortal = target.closest('[data-radix-portal]') || 
-                              target.closest('[data-slot*="content"]')
+        // Also check if the click target itself is inside a portal.
+        // Lưu ý: chỉ khớp popper content của Radix (luôn có [data-state]),
+        // tránh khớp nhầm "card-content" của shadcn Card (không có data-state),
+        // nếu không click vào vùng trống trong Card sẽ bị coi là click trong portal.
+        const isInsidePortal = target.closest('[data-radix-portal]') ||
+                              target.closest('[data-slot*="content"][data-state]')
         
         if (isPortalOpen || isInsidePortal) {
           return
@@ -331,46 +334,72 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
                 </div>
               </CardHeader>
               <CardContent className="p-2 sm:p-6">
-                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-3">
-                  {[...people]
-                    .filter((person) => {
-                      if (!levelFilter) return true
-                      const filterLevel = parseInt(levelFilter)
-                      return person.level === filterLevel
-                    })
-                    .map((person) => (
-                    <div
-                      key={person.personId}
-                      className="p-3 sm:p-4 rounded-lg border cursor-pointer hover:shadow-md transition-shadow flex"
-                      style={{ backgroundColor: getPersonColor(person) }}
-                      onClick={() => {
-                        if (!confirmDiscardChanges()) return
-                        selectPerson(person)
-                        openSidebar()
-                      }}
-                    >
-                      {/* Avatar - 3/10 width */}
-                      <div className="w-3/10 flex-shrink-0 mr-1 sm:mr-2">
-                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 border-white bg-gray-200">
-                          <Image
-                            src={person.photoUrl || "/placeholder-user.jpg"}
-                            alt={person.name || "Avatar"}
-                            width={48}
-                            height={48}
-                            className="w-full h-full object-cover"
-                          />
+                {/* Group members by generation level, one row per level */}
+                <div className="space-y-4 sm:space-y-6">
+                  {Object.entries(
+                    [...people]
+                      .filter((person) => {
+                        if (!levelFilter) return true
+                        const filterLevel = parseInt(levelFilter)
+                        return person.level === filterLevel
+                      })
+                      .reduce((groups, person) => {
+                        const lvl = person.level ?? 0
+                        ;(groups[lvl] ||= []).push(person)
+                        return groups
+                      }, {} as Record<number, Person[]>)
+                  )
+                    .sort(([a], [b]) => Number(a) - Number(b))
+                    .map(([level, members]) => (
+                      <div key={level}>
+                        {/* Level header */}
+                        <div className="flex items-center mb-2 sm:mb-3">
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 text-xs sm:text-sm font-semibold">
+                            Đời {level}
+                          </span>
+                          <span className="ml-2 text-xs sm:text-sm text-gray-400">
+                            {members.length} thành viên
+                          </span>
+                          <div className="flex-1 ml-3 border-t border-gray-200" />
+                        </div>
+                        {/* Members in this level wrap to new lines when overflowing / on small screens */}
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-3">
+                          {members.map((person) => (
+                            <div
+                              key={person.personId}
+                              className="p-3 sm:p-4 rounded-lg border cursor-pointer hover:shadow-md transition-shadow flex"
+                              style={{ backgroundColor: getPersonColor(person) }}
+                              onClick={() => {
+                                if (!confirmDiscardChanges()) return
+                                selectPerson(person)
+                                openSidebar()
+                              }}
+                            >
+                              {/* Avatar - 3/10 width */}
+                              <div className="w-3/10 flex-shrink-0 mr-1 sm:mr-2">
+                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 border-white bg-gray-200">
+                                  <Image
+                                    src={person.photoUrl || "/placeholder-user.jpg"}
+                                    alt={person.name || "Avatar"}
+                                    width={48}
+                                    height={48}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              </div>
+                              {/* Info - 7/10 width */}
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium text-sm sm:text-base truncate" style={{ direction: 'rtl', textAlign: 'left' }}>{person.name}</div>
+                                <div className="text-xs sm:text-sm text-gray-600 flex justify-between">
+                                  <span>{person.gender === "M" ? "Nam" : person.gender === "F" ? "Nữ" : "Khác"}</span>
+                                  <span className="text-gray-500">Đời {person.level}</span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
-                      {/* Info - 7/10 width */}
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm sm:text-base truncate" style={{ direction: 'rtl', textAlign: 'left' }}>{person.name}</div>
-                        <div className="text-xs sm:text-sm text-gray-600 flex justify-between">
-                          <span>{person.gender === "M" ? "Nam" : person.gender === "F" ? "Nữ" : "Khác"}</span>
-                          <span className="text-gray-500">Đời {person.level}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
 
                 {/* Empty state */}
