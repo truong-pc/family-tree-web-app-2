@@ -1,6 +1,6 @@
 "use client"
 
-import { use, useEffect, useState } from 'react';
+import { use, useEffect, useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/stores/auth-store';
 import FamilyTreeView from '@/components/tree/family-tree-view';
@@ -34,7 +34,9 @@ export default function TreeChartPage({ params }: TreeChartPageProps) {
 
     return (
         <DashboardLayout>
-            <FamilyTreeView chartId={chartId} />
+            <Suspense fallback={null}>
+                <FamilyTreeView chartId={chartId} />
+            </Suspense>
         </DashboardLayout>
     );
 }

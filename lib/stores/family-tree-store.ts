@@ -229,20 +229,21 @@ export const useFamilyTreeStore = create<FamilyTreeState>()((set, get) => ({
     }
   },
 
+  // Chỉ lọc danh sách gợi ý theo tên. KHÔNG đụng tới focusedPerson — việc
+  // zoom/highlight do setFocusedPerson quản lý riêng (bỏ highlight khi click cây).
   handleSearch: (term: string) => {
     const { people } = get()
-    if (term.trim()) {
-      const filtered = people.filter((person) =>
-        person.name.toLowerCase().includes(term.toLowerCase())
-      )
-      set({ searchTerm: term, searchResults: filtered })
-    } else {
-      set({ searchTerm: term, searchResults: [], focusedPerson: null })
-    }
+    const filtered = term.trim()
+      ? people.filter((person) =>
+          person.name.toLowerCase().includes(term.toLowerCase())
+        )
+      : []
+    set({ searchTerm: term, searchResults: filtered })
   },
 
+  // Nút X: chỉ xóa ô tìm kiếm. KHÔNG tắt highlight — việc đó do click vào cây lo.
   clearSearch: () => {
-    set({ searchTerm: "", searchResults: [], focusedPerson: null })
+    set({ searchTerm: "", searchResults: [] })
   },
 
   selectPerson: (person) => {

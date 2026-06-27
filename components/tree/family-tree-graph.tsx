@@ -34,11 +34,13 @@ interface Props {
   focusedPerson: string | null
   getPersonColor: (name: string) => string
   chartId?: string
+  // Gọi khi người dùng click vào vùng trống của cây -> dùng để bỏ highlight/focus.
+  onBackgroundClick?: () => void
 }
 
 // Imperative actions the parent can trigger via a ref (e.g. toolbar buttons)
 export interface FamilyTreeChartHandle {
-  exportImage: () => void
+  exportImage: () => Promise<void>
   resetZoom: () => void
 }
 
@@ -55,7 +57,7 @@ interface TreeNode {
 }
 
 const FamilyTreeChart = forwardRef<FamilyTreeChartHandle, Props>(function FamilyTreeChart(
-  { data, onNodeClick, focusedPerson, getPersonColor, chartId },
+  { data, onNodeClick, focusedPerson, getPersonColor, chartId, onBackgroundClick },
   ref,
 ) {
   const svgRef = useRef<SVGSVGElement>(null)
@@ -70,11 +72,20 @@ const FamilyTreeChart = forwardRef<FamilyTreeChartHandle, Props>(function Family
   const savedTransformRef = useRef<d3.ZoomTransform | null>(null)
   const initialTransformRef = useRef<d3.ZoomTransform | null>(null)
   const lastChartIdRef = useRef<string | null>(null)
+  // Người mà ta đã auto-zoom tới gần nhất. Dùng để zoom CHỈ khi focus đổi sang
+  // người mới, tránh việc cứ mỗi lần biểu đồ vẽ lại (đổi màu/dữ liệu/kích thước) lại "giật" về người đang focus.
+  const lastFocusedRef = useRef<string | null>(null)
+  // Transform mục tiêu của lần zoom-to-focus gần nhất. Khi biểu đồ vẽ lại (vd
+  // StrictMode gọi effect 2 lần ở dev) mà transition zoom chưa xong, ta khôi phục
+  // thẳng về transform này thay vì giá trị giữa chừng -> không bị kẹt nửa vời.
+  const focusTransformRef = useRef<d3.ZoomTransform | null>(null)
 
   // Reset the saved transform if switching to a different tree (chartId changed)
   if (chartId && chartId !== lastChartIdRef.current) {
     savedTransformRef.current = null
     initialTransformRef.current = null
+    lastFocusedRef.current = null
+    focusTransformRef.current = null
     lastChartIdRef.current = chartId
   }
 
@@ -467,6 +478,12 @@ const FamilyTreeChart = forwardRef<FamilyTreeChartHandle, Props>(function Family
     zoomRef.current = zoom
     svg.call(zoom)
 
+    // Click vào vùng trống của cây (các node đã stopPropagation) -> bỏ highlight.
+    // Chỉ gọi khi đang có focus để tránh vẽ lại thừa.
+    svg.on("click", () => {
+      if (focusedPerson) onBackgroundClick?.()
+    })
+
     // Calculate default scale and transform to fit the graph inside the viewport on load
     if (allNodes.length > 0) {
       const xExtent = d3.extent(allNodes, (d: TreeNode) => d.x) as [number, number]
@@ -489,6 +506,11 @@ const FamilyTreeChart = forwardRef<FamilyTreeChartHandle, Props>(function Family
           savedTransformRef.current = defaultTransform
           svg.call(zoom.transform, defaultTransform)
         }
+      } else if (focusedPerson && lastFocusedRef.current === focusedPerson && focusTransformRef.current) {
+        // Đang focus đúng người này: vẽ lại thì khôi phục thẳng về vị trí focus,
+        // không lấy savedTransformRef (có thể đang ở giữa chừng transition bị ngắt).
+        savedTransformRef.current = focusTransformRef.current
+        svg.call(zoom.transform, focusTransformRef.current)
       } else if (savedTransformRef.current) {
         svg.call(zoom.transform, savedTransformRef.current)
       } else {
@@ -496,23 +518,32 @@ const FamilyTreeChart = forwardRef<FamilyTreeChartHandle, Props>(function Family
       }
     }
 
-    // Auto-focus and zoom into a specific member if targeted
-    if (focusedPerson) {
+    // Auto-zoom vào một thành viên CHỈ khi focus đổi sang người mới. Sau lần
+    // zoom đầu, người dùng có thể kéo/zoom/chọn node khác mà không bị giật về
+    // người cũ mỗi lần vẽ lại. Khi focus bị xóa (null) thì reset ref để lần sau
+    // chọn lại đúng người đó vẫn zoom được.
+    if (!focusedPerson) {
+      lastFocusedRef.current = null
+      focusTransformRef.current = null
+    } else if (focusedPerson !== lastFocusedRef.current) {
       const focusedNode = allNodes.find((n: TreeNode) => n.data.id === focusedPerson || n.data.spouses.some((s: any) => s.id === focusedPerson))
       if (focusedNode) {
-        // Find specific person offset if needed
+        // Chỉ đánh dấu "đã zoom" khi thực sự tìm thấy node, để render sau vẫn còn cơ hội zoom
+        lastFocusedRef.current = focusedPerson
+        // Offset ngang nếu người được focus là vợ/chồng nằm trong cùng block
         const pIndex = [focusedNode.data, ...focusedNode.data.spouses].findIndex((p: any) => p.id === focusedPerson);
         const pOffsetX = pIndex >= 0 ? pIndex * (baseNodeWidth + 10) + baseNodeWidth / 2 - focusedNode.blockWidth / 2 : 0;
-        
+
         const transform = d3.zoomIdentity
           .translate(width / 2, height / 2)
           .scale(1.2)
           .translate(-(focusedNode.x + pOffsetX), -focusedNode.y)
         svg.transition().duration(750).call(zoom.transform, transform)
         savedTransformRef.current = transform
+        focusTransformRef.current = transform // nhớ vị trí focus để khôi phục nếu transition bị ngắt
       }
     }
-  }, [data.nodes, data.links, focusedPerson, getPersonColor, dimensions, onNodeClick, chartId])
+  }, [data.nodes, data.links, focusedPerson, getPersonColor, dimensions, onNodeClick, onBackgroundClick, chartId])
 
 
   const handleResetZoom = useCallback(() => {
@@ -522,13 +553,14 @@ const FamilyTreeChart = forwardRef<FamilyTreeChartHandle, Props>(function Family
     savedTransformRef.current = initialTransformRef.current
   }, [])
 
-  // Track export progress to disable the button and show feedback
-  const [isExporting, setIsExporting] = useState(false)
+  // Guard against re-entrant exports (the parent also disables the button, but
+  // this keeps the imperative API safe if called directly).
+  const isExportingRef = useRef(false)
 
   // Export the entire family tree (not just the visible viewport) to a PNG download
   const handleExportImage = useCallback(async () => {
-    if (!svgRef.current || isExporting) return
-    setIsExporting(true)
+    if (!svgRef.current || isExportingRef.current) return
+    isExportingRef.current = true
     try {
       const svgNode = svgRef.current
       // The first <g> is the zoom/pan container holding the whole tree
@@ -561,15 +593,25 @@ const FamilyTreeChart = forwardRef<FamilyTreeChartHandle, Props>(function Family
       bgRect.setAttribute("fill", "#ffffff")
       clone.insertBefore(bgRect, clone.firstChild)
 
-      // Convert every avatar image to a base64 data URL to avoid a tainted canvas
+      // Convert every avatar image to a base64 data URL to avoid a tainted canvas.
+      // Most nodes share the same href (the placeholder, or a repeated avatar), so
+      // we fetch each distinct URL only ONCE and reuse the result. With 300 nodes
+      // this turns hundreds of fetches into a handful — the real export bottleneck.
       const images = Array.from(clone.querySelectorAll("image"))
+      const dataUrlCache = new Map<string, Promise<string>>()
       await Promise.all(
         images.map(async (img) => {
           const href =
             img.getAttribute("href") ||
             img.getAttributeNS("http://www.w3.org/1999/xlink", "href") ||
             ""
-          const dataUrl = await imageToDataUrl(href)
+          if (!href) return
+          let pending = dataUrlCache.get(href)
+          if (!pending) {
+            pending = imageToDataUrl(href)
+            dataUrlCache.set(href, pending)
+          }
+          const dataUrl = await pending
           if (dataUrl) {
             img.setAttribute("href", dataUrl)
             img.removeAttributeNS("http://www.w3.org/1999/xlink", "href")
@@ -586,8 +628,12 @@ const FamilyTreeChart = forwardRef<FamilyTreeChartHandle, Props>(function Family
       await new Promise<void>((resolve, reject) => {
         const img = new Image()
         img.onload = () => {
-          // Render at 2x for a crisp, high-resolution image
-          const scale = 2
+          // Render at 1x for a crisp image, but cap the canvas area so very large
+          // trees (e.g. 300 nodes) don't blow up memory / toBlob time. Browsers
+          // also limit max canvas dimensions; staying under ~16M px keeps it safe.
+          // const MAX_CANVAS_PIXELS = 16_000_000
+          // const scale = Math.min(2, Math.sqrt(MAX_CANVAS_PIXELS / (exportWidth * exportHeight)))
+          const scale = 1
           const canvas = document.createElement("canvas")
           canvas.width = exportWidth * scale
           canvas.height = exportHeight * scale
@@ -619,12 +665,10 @@ const FamilyTreeChart = forwardRef<FamilyTreeChartHandle, Props>(function Family
         }
         img.src = svgUrl
       })
-    } catch (err) {
-      console.error("Export image failed:", err)
     } finally {
-      setIsExporting(false)
+      isExportingRef.current = false
     }
-  }, [isExporting])
+  }, [])
 
   // Expose imperative actions to the parent via ref so toolbar buttons can
   // trigger export/reset without leaking functions onto the global window.

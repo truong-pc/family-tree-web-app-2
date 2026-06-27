@@ -1,7 +1,8 @@
 "use client"
 
-import React, { useEffect, useRef, useCallback } from "react"
-import { Search, Plus, X, Users, Download, RefreshCw } from "lucide-react"
+import React, { useEffect, useRef, useCallback, useState } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
+import { Search, Plus, X, Users, Download, RefreshCw, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -53,6 +54,32 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
   const sidebarRef = useRef<HTMLDivElement>(null)
   // Ref to the tree chart for triggering imperative actions (export, reset zoom)
   const chartRef = useRef<FamilyTreeChartHandle>(null)
+  // Track image export so we can show a spinner and block double-clicks. The
+  // export work lives in the chart; we own the UI state here next to the button.
+  const [isExporting, setIsExporting] = useState(false)
+
+  const handleExportImage = useCallback(async () => {
+    if (isExporting) return
+    setIsExporting(true)
+    try {
+      await chartRef.current?.exportImage()
+    } catch (err) {
+      console.error("Export image failed:", err)
+    } finally {
+      setIsExporting(false)
+    }
+  }, [isExporting])
+
+  // Khi điều hướng từ nơi khác kèm ?focus=<personId> (vd: modal sự kiện), ta tự
+  // zoom vào node người đó. Việc set focus được gắn vào lúc fetchData của LẦN MOUNT
+  // này resolve (xem effect fetch bên dưới) — KHÔNG dựa vào people.length, vì store
+  // là global nên lần vào thứ 2 nó vẫn còn data cũ -> effect sẽ bắn quá sớm rồi bị
+  // reset() quét mất focus. Dùng ref để effect fetch đọc focusId mới nhất.
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const focusId = searchParams.get("focus")
+  const focusIdRef = useRef(focusId)
+  focusIdRef.current = focusId
 
   // Handle click outside sidebar to close it
   useEffect(() => {
@@ -97,15 +124,17 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
     const person = people.find((p) => String(p.personId) === personIdStr)
     if (person) {
       if (!confirmDiscardChanges()) return
+      setFocusedPerson(null) // Bỏ highlight khi người dùng chuyển sang chọn node
       selectPerson(person) // Set the selected person in global store
       openSidebar() // Open the details sidebar
     }
   }
 
-  // Handle search result click
+  // Click một kết quả tìm kiếm: zoom + highlight người đó, rồi xóa ô tìm kiếm
+  // (giữ nguyên highlight). Nút X mới là chỗ tắt highlight.
   const handleSearchResultClick = (person: Person) => {
     setFocusedPerson(String(person.personId))
-    handleSearch(person.name)
+    handleSearch("")
   }
 
   // Get background color for person card based on relationships and gender
@@ -137,10 +166,18 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
 
     if (hasChanged) {
       reset()
-      fetchData(chartId, readOnly)
       lastFetchedRef.current = { chartId, readOnly }
+      // Sau khi data MỚI của lần mount này tải xong mới zoom vào ?focus (nếu có)
+      // rồi dọn param. Đặt ở đây để focus không bị reset() phía trên quét mất.
+      fetchData(chartId, readOnly).then(() => {
+        const fid = focusIdRef.current
+        if (fid) {
+          setFocusedPerson(fid)
+          router.replace(`/dashboard/${chartId}/tree`, { scroll: false })
+        }
+      })
     }
-  }, [chartId, readOnly, fetchData, reset])
+  }, [chartId, readOnly, fetchData, reset, setFocusedPerson, router])
 
   const isInitialLoad = loading && people.length === 0
 
@@ -223,11 +260,16 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => chartRef.current?.exportImage()}
+                      onClick={handleExportImage}
+                      disabled={isExporting}
                       className="text-gray-500 hover:text-gray-700"
-                      title="Tải ảnh gia phả"
+                      title={isExporting ? "Đang tạo ảnh..." : "Tải ảnh gia phả"}
                     >
-                      <Download className="h-5 w-5" />
+                      {isExporting ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <Download className="h-5 w-5" />
+                      )}
                     </Button>
                     <Button
                       variant="ghost"
@@ -297,6 +339,7 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
                   onNodeClick={handleNodeClick}
                   focusedPerson={focusedPerson}
                   getPersonColor={getPersonColorById}
+                  onBackgroundClick={() => setFocusedPerson(null)}
                   chartId={chartId}
                 />
               </CardContent>

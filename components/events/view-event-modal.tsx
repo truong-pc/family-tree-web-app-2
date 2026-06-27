@@ -75,7 +75,10 @@ export default function ViewEventModal({
   const isOpen = !!ev
   const isCustom = ev?.type === "custom"
   const meta = getEventMeta(ev?.type)
-  const treeUrl = `/dashboard/${chartId}/tree`
+  // Kèm ?focus=<personId> để trang tree tự zoom vào node người này khi mở.
+  const treeUrl = ev?.personId
+    ? `/dashboard/${chartId}/tree?focus=${ev.personId}`
+    : `/dashboard/${chartId}/tree`
 
   /**
    * Fetch person detail khi modal mở cho event birthday/death.
@@ -274,7 +277,7 @@ export default function ViewEventModal({
                                 </span>
                                 <span className="font-semibold text-slate-900">{s.name}</span>
                                 <span className="text-[10px] text-slate-400 ml-auto">
-                                  {s.spouseOrder === 1 ? "Vợ cả" : `Vợ ${s.spouseOrder}`}
+                                  {s.gender === "M" ? `` : (s.spouseOrder === 1 ? "Vợ cả" : `Vợ ${s.spouseOrder}`)}
                                 </span>
                               </div>
                             ))
