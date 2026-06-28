@@ -92,6 +92,14 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
           return
         }
 
+        // Phần tử tự đánh dấu "đừng đóng sidebar khi bấm vào tôi" (vd: thẻ thành
+        // viên). Nếu không bỏ qua, pointerdown sẽ đóng sidebar rồi onClick mở lại
+        // => sidebar trượt ra rồi trượt vào. Bỏ qua để onClick chỉ đổi người đang
+        // chọn, sidebar giữ nguyên và tự tải lại nội dung.
+        if (target.closest('[data-keep-sidebar-open]')) {
+          return
+        }
+
         // Check if any portal content is open or being clicked (DatePicker, Select, etc.)
         const isPortalOpen = 
           document.querySelector('[data-slot*="content"][data-state="open"]') ||
@@ -415,6 +423,7 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
                           {members.map((person) => (
                             <div
                               key={person.personId}
+                              data-keep-sidebar-open
                               className="p-3 sm:p-4 rounded-lg border cursor-pointer hover:shadow-md transition-shadow flex"
                               style={{ backgroundColor: getPersonColor(person) }}
                               onClick={() => {
