@@ -251,7 +251,7 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
               <CardHeader className="pb-1 sm:pb-3 px-2 sm:px-6 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <CardTitle className="text-lg sm:text-xl">Sơ đồ phả hệ</CardTitle>
+                    <CardTitle className=" bg-gradient-to-r from-blue-700 to-amber-600 bg-clip-text text-lg font-bold text-transparent dark:from-blue-400 dark:to-amber-300 sm:text-xl ">Sơ đồ phả hệ</CardTitle>
                     {loading && (
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
                     )}
@@ -350,7 +350,12 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
               <CardHeader className="pb-2 sm:pb-6 px-2 sm:px-6">
                 <div className="flex flex-col space-y-2">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg sm:text-xl">Thành viên gia đình ({people.length})</CardTitle>
+                    <CardTitle className="text-lg sm:text-xl">
+                      <span className="bg-gradient-to-r from-blue-700 to-amber-600 bg-clip-text text-transparent font-bold dark:from-blue-400 dark:to-amber-300">
+                        Thành viên gia đình
+                      </span>{" "}
+                      <span className="text-sm text-gray-900 dark:text-gray-100">({people.length})</span>
+                    </CardTitle>
                     <div className="flex items-center space-x-2">
                       <label className="text-sm text-gray-600">Số đời:</label>
                       <div className="relative">
