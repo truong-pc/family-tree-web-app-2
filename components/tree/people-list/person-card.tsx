@@ -33,7 +33,9 @@ export default function PersonCard({ person, accent, onClick }: Props) {
       </span>
 
       <div className="min-w-0 flex-1">
-        <div className="truncate font-semibold text-gray-900">{person.name}</div>
+        <div dir="rtl" className="truncate text-left font-semibold text-gray-900">
+          <bdi>{person.name}</bdi>
+        </div>
         <div className="mt-0.5 flex items-center justify-between text-xs text-gray-700 sm:text-sm">
           <span>{genderLabel(person.gender)}</span>
           <span className="font-mono text-[11px] text-gray-600">Đời {person.level}</span>

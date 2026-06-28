@@ -7,7 +7,6 @@ export const COLORS = {
   female: "#FCE7F3", // pink
   other: "#E5E7EB", // gray
   isolated: "#FEF3C7", // amber — no relationships yet
-  fallback: "#F3F4F6",
 } as const
 
 // Highlight colour for the focused person's card ring.

@@ -1,4 +1,4 @@
-import { COLORS } from "./graph/constants"
+import { COLORS } from "./tree-graph/constants"
 import type { FamilyTreeData, Person } from "@/lib/stores/family-tree-store"
 
 // Shared helper used across the whole tree feature: the D3 chart (node fill),

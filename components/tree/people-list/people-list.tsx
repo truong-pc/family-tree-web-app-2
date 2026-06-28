@@ -62,7 +62,7 @@ export default function PeopleList({ readOnly = false }: Props) {
     <div className="rounded-2xl border border-white/50 bg-white/60 p-4 shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-black/30 sm:p-6">
       {/* Header + filters */}
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 sm:text-xl">
+        <h2 className=" bg-gradient-to-r from-blue-700 to-amber-600 bg-clip-text text-lg font-bold text-transparent dark:from-blue-400 dark:to-amber-300 sm:text-xl">
           Thành viên gia đình{" "}
           <span className="text-sm font-medium text-gray-400">({people.length})</span>
         </h2>
