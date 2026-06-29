@@ -87,7 +87,7 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
       if (sidebarOpen && sidebarRef.current && !sidebarRef.current.contains(event.target as Node)) {
         // Check if click is on a tree node (SVG rect)
         const target = event.target as Element
-        if (target.tagName === 'rect' || target.closest('svg')) {
+        if (target.tagName === 'rect' || target.closest('svgNode')) {
           // Don't close sidebar when clicking on tree nodes
           return
         }
