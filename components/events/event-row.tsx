@@ -50,10 +50,6 @@ export default function EventRow({
             <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">ÂL</span>
           )}
           <span className="text-[10px] text-slate-500">{formatRepeat(ev)}</span>
-          {/* Hiển thị ID rút gọn cho event custom */}
-          {isCustom && (
-            <span className="font-mono text-[10px] text-slate-400">{ev.sourceId.slice(0, 18)}{ev.sourceId.length > 18 ? "…" : ""}</span>
-          )}
         </div>
         <h3 className="font-bold text-[15px] mt-1 truncate text-slate-900">{ev.title}</h3>
         <div className="text-xs text-slate-500 mt-0.5 line-clamp-1">

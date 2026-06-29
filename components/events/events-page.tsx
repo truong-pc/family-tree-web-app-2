@@ -179,13 +179,20 @@ export default function EventsPageContent({ chartId }: { chartId: string }) {
   const handleCreate = useCallback(async (form: EventForm) => {
     try {
       if (!token || !chartId) return
-      const created = await eventsApi.createEvent(token, chartId, form)
-      setEvents((es) => [created, ...es])
+      await eventsApi.createEvent(token, chartId, form)
       setCreating(false)
       toast({ title: "Đã tạo sự kiện", description: form.title })
-      // Refetch upcoming để cập nhật nếu event mới nằm trong khoảng
-      eventsApi.getUpcomingEvents(token, chartId, upcomingDays)
-        .then(setUpcoming)
+      // Response của createEvent thiếu sourceId/type → fetch lại danh sách
+      // để lấy dữ liệu chuẩn từ server (tránh crash & nhận diện sai loại).
+      // Refetch cả upcoming nếu event mới nằm trong khoảng.
+      Promise.all([
+        eventsApi.getEvents(token, chartId),
+        eventsApi.getUpcomingEvents(token, chartId, upcomingDays),
+      ])
+        .then(([evs, upcomingEvs]) => {
+          setEvents(evs || [])
+          setUpcoming(upcomingEvs || [])
+        })
         .catch(() => { })
     } catch (err: any) {
       console.error("Create event error:", err)
