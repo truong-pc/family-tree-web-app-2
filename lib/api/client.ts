@@ -1,5 +1,6 @@
 import axios from "axios"
 import { useAuthStore } from "@/lib/stores/auth-store"
+import { getClientId } from "@/lib/clientId"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"
 
@@ -9,6 +10,12 @@ export const apiClient = axios.create({
     "Content-Type": "application/json",
   },
 })
+
+// Đính kèm X-Client-Id vào mọi request (chỉ client-side, nơi có tab uuid).
+// Backend echo giá trị này vào `originId` của tree.changed để FE bỏ echo của chính mình.
+if (typeof window !== "undefined") {
+  apiClient.defaults.headers.common["X-Client-Id"] = getClientId()
+}
 
 // Promise để tránh race condition khi nhiều request cùng refresh token
 let refreshTokenPromise: Promise<string> | null = null

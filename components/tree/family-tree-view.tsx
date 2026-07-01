@@ -13,6 +13,7 @@ import AddPersonModal from "./add-person-modal"
 import AddRelationshipModal from "./add-relationship-modal"
 import DelRelationshipModal from "./del-relationship-modal"
 import { useFamilyTreeStore } from "@/lib/stores/family-tree-store"
+import { useTreeRealtime } from "@/hooks/useTreeRealtime"
 import { getPersonColor } from "./person-color"
 
 // Re-export types for backward compatibility.
@@ -40,6 +41,10 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
     toggleModal,
     reset,
   } = useFamilyTreeStore()
+
+  // Realtime: đồng bộ cây khi owner/editor khác thay đổi. Chỉ bật ở chế độ editor
+  // (trang published/read-only không mở WebSocket).
+  useTreeRealtime(chartId, !readOnly)
 
   const sidebarRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<FamilyTreeChartHandle>(null)
