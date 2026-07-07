@@ -110,7 +110,7 @@ export default function NewsFeed() {
         {/* Header */}
         <div>
           <p className="text-[12px] font-semibold tracking-[0.14em] text-amber-600 uppercase mb-2">Tin tức gia phả</p>
-          <h1 className="text-3xl md:text-4xl font-bold text-slate-900 leading-tight">Tin tức dòng họ</h1>
+          <h1 className="text-3xl md:text-5xl font-bold text-slate-900 leading-tight">Tin tức dòng họ</h1>
           <p className="text-slate-500 mt-3 max-w-2xl">
             Sự kiện, thông báo và phả ký được cập nhật từ các gia phả của bạn và toàn hệ thống.
           </p>

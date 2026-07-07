@@ -11,7 +11,9 @@
  * Gradient: teal → amber, glassmorphism cards
  */
 
+import { Ban, Clock } from "lucide-react"
 import type { CalendarToday } from "@/lib/api/events"
+import { Badge } from "@/components/ui/badge"
 
 export default function LunarCalendarBanner({ data }: { data: CalendarToday }) {
   return (
@@ -115,23 +117,23 @@ export default function LunarCalendarBanner({ data }: { data: CalendarToday }) {
         <div className="col-span-12 mt-2 pt-5 border-t border-white/15 grid grid-cols-12 gap-5">
           <div className="col-span-12 lg:col-span-7">
             <div className="flex items-center gap-2 text-[11px] uppercase tracking-[.18em] font-bold text-amber-200/90 mb-2">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+              <Clock size={12} strokeWidth={2.4} />
               Giờ Hoàng Đạo
             </div>
             <div className="flex flex-wrap gap-1.5">
               {data.gioTot.map((g) => (
-                <span key={g} className="px-2.5 py-1 rounded-lg text-xs font-semibold" style={{ background: "rgba(255,255,255,.10)", border: "1px solid rgba(255,255,255,.15)", backdropFilter: "blur(8px)" }}>{g}</span>
+                <Badge key={g} className="px-2.5 py-1 rounded-lg text-xs font-semibold text-white" style={{ background: "rgba(255,255,255,.10)", border: "1px solid rgba(255,255,255,.15)", backdropFilter: "blur(8px)" }}>{g}</Badge>
               ))}
             </div>
           </div>
           <div className="col-span-12 lg:col-span-5">
             <div className="flex items-center gap-2 text-[11px] uppercase tracking-[.18em] font-bold text-amber-200/90 mb-2">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><circle cx="12" cy="12" r="9" /><path d="m5 5 14 14" /></svg>
+              <Ban size={12} strokeWidth={2.4} />
               Tuổi Xung
             </div>
             <div className="flex flex-wrap gap-1.5">
               {data.tuoiXung.map((t) => (
-                <span key={t} className="px-2.5 py-1 rounded-lg text-xs font-semibold text-amber-50" style={{ background: "rgba(248,113,113,.15)", border: "1px solid rgba(252,165,165,.30)", backdropFilter: "blur(8px)" }}>{t}</span>
+                <Badge key={t} className="px-2.5 py-1 rounded-lg text-xs font-semibold text-amber-50" style={{ background: "rgba(248,113,113,.15)", border: "1px solid rgba(252,165,165,.30)", backdropFilter: "blur(8px)" }}>{t}</Badge>
               ))}
             </div>
           </div>

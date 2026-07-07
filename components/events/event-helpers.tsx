@@ -8,6 +8,7 @@
  * - daysUntilLabel: label đếm ngược cho upcoming events
  */
 
+// import { Cake, Flame, CalendarDays } from "lucide-react"
 import type { FamilyEvent } from "@/lib/api/events"
 
 /** Metadata hiển thị cho mỗi loại sự kiện: màu, icon, label */
@@ -27,6 +28,7 @@ export const TYPE_META = {
         <path d="M2 21h20M7 8v2M12 8v2M17 8v2M12 4v0" />
       </svg>
     ),
+    // icon: <Cake size={16} />,
   },
   death: {
     label: "Giỗ",
@@ -43,6 +45,7 @@ export const TYPE_META = {
         <path d="M7 22h10" />
       </svg>
     ),
+    // icon: <Flame size={16} />,
   },
   custom: {
     label: "Tự tạo",

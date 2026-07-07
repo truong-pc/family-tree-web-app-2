@@ -9,13 +9,15 @@
  */
 
 import type { UpcomingEvent } from "@/lib/api/events"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { getEventMeta, formatEventDate, formatRepeat, daysUntilLabel } from "./event-helpers"
 
 export default function UpcomingCard({ ev, onClick }: { ev: UpcomingEvent; onClick: () => void }) {
   const meta = getEventMeta(ev.type)
   const isToday = ev.daysUntil === 0
 
-  // --- Card đặc biệt cho sự kiện hôm nay ---
+  // Card đặc biệt cho sự kiện hôm nay 
   if (isToday) {
     return (
       <article
@@ -27,20 +29,20 @@ export default function UpcomingCard({ ev, onClick }: { ev: UpcomingEvent; onCli
         <div className="absolute -top-16 -right-12 w-44 h-44 rounded-full pointer-events-none" style={{ background: "rgba(245,158,11,.35)", filter: "blur(50px)" }} />
         <div className="relative p-5">
           <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold border border-amber-300/30" style={{ background: "rgba(251,191,36,.20)", color: "#fde68a" }}>HÔM NAY</span>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold inline-flex items-center gap-1" style={{ background: "rgba(255,255,255,.15)", border: "1px solid rgba(255,255,255,.20)" }}>
+            <Badge className="px-2 py-0.5 rounded-full text-[10px] font-bold border border-amber-300/30" style={{ background: "rgba(251,191,36,.20)", color: "#fde68a" }}>HÔM NAY</Badge>
+            <Badge className="px-2 py-0.5 rounded-full text-[10px] font-bold gap-1 text-white [&>svg]:size-4" style={{ background: "rgba(255,255,255,.15)", border: "1px solid rgba(255,255,255,.20)" }}>
               {meta.icon} {meta.label}
-            </span>
+            </Badge>
           </div>
           <h4 className="font-bold text-xl leading-tight mt-3">{ev.title}</h4>
           <p className="text-blue-100/90 text-xs mt-1.5">{formatEventDate(ev)} · {ev.branch || formatRepeat(ev)}</p>
-          <button className="mt-4 px-3.5 py-2 rounded-lg font-semibold text-blue-900 text-xs hover:opacity-90 transition" style={{ background: "#fbbf24" }}>Xem chi tiết</button>
+          <Button size="sm" className="mt-4 px-3.5 py-2 h-auto rounded-lg font-semibold text-blue-900 text-xs hover:opacity-90 hover:brightness-100 transition" style={{ background: "#fbbf24" }}>Xem chi tiết</Button>
         </div>
       </article>
     )
   }
 
-  // --- Card thường cho sự kiện tương lai ---
+  // Card thường cho sự kiện tương lai 
   return (
     <article
       onClick={onClick}
@@ -50,9 +52,9 @@ export default function UpcomingCard({ ev, onClick }: { ev: UpcomingEvent; onCli
       <div className="flex items-start justify-between gap-2">
         <div className={`w-10 h-10 rounded-xl grid place-items-center ${meta.iconBg} ${meta.iconText}`}>{meta.icon}</div>
         {/* Badge đếm ngược */}
-        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${meta.bgClass} ${meta.textClass} border ${meta.borderClass}`}>
+        <Badge variant="outline" className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${meta.bgClass} ${meta.textClass} ${meta.borderClass}`}>
           {daysUntilLabel(ev.daysUntil)}
-        </span>
+        </Badge>
       </div>
       <h4 className="font-bold text-[15px] leading-snug mt-3 line-clamp-2 text-slate-900">{ev.title}</h4>
       <div className="text-xs text-slate-500 mt-1.5">{formatEventDate(ev)}</div>

@@ -46,7 +46,7 @@ export default function NewsManagePage({ chartId }: { chartId: string }) {
     [isOwner, user?.id]
   )
 
-  // --- Fetch ---
+  // Fetch 
   const fetchPosts = useCallback(() => {
     if (!token || !chartId) {
       setLoading(false)
@@ -73,7 +73,7 @@ export default function NewsManagePage({ chartId }: { chartId: string }) {
 
   useEffect(() => { fetchPosts() }, [fetchPosts])
 
-  // --- Filter ---
+  // Filter 
   const filtered = useMemo(() => {
     let list = posts
     if (tab === "mine") list = list.filter((p) => p.authorId === user?.id)
@@ -94,7 +94,7 @@ export default function NewsManagePage({ chartId }: { chartId: string }) {
     { id: "internal", label: "Nội bộ" },
   ]
 
-  // --- CRUD ---
+  // CRUD 
   const handleCreate = useCallback(async (payload: NewsFormPayload) => {
     if (!token || !chartId) return
     setSaving(true)
@@ -173,7 +173,7 @@ export default function NewsManagePage({ chartId }: { chartId: string }) {
         <div className="flex items-end justify-between gap-4 flex-wrap">
           <div>
             <p className="text-[12px] font-semibold tracking-[0.12em] text-amber-600 uppercase mb-2">Quản lý tin tức</p>
-            <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Quản lý bài viết</h1>
+            <h1 className="text-3xl md:text-5xl font-bold text-slate-900">Quản lý bài viết</h1>
             <p className="text-sm text-slate-500 mt-2">Soạn, chỉnh sửa và chọn phạm vi công khai cho tin tức của gia phả này.</p>
           </div>
           <button
@@ -218,7 +218,7 @@ export default function NewsManagePage({ chartId }: { chartId: string }) {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Tìm bài viết…"
-                  className="text-sm bg-transparent focus:outline-none w-full placeholder:text-slate-400"
+                  className="text-base md:text-sm bg-transparent focus:outline-none w-full placeholder:text-slate-400"
                 />
               </div>
             </div>

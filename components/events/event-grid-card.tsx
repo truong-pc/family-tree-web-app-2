@@ -8,7 +8,10 @@
  * - Click vào card → onView
  */
 
+import { Calendar, Pencil, Trash2 } from "lucide-react"
 import type { FamilyEvent } from "@/lib/api/events"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { getEventMeta, formatEventDate, formatRepeat } from "./event-helpers"
 
 export default function EventGridCard({
@@ -36,24 +39,24 @@ export default function EventGridCard({
         {/* Nút sửa/xóa chỉ hiển thị cho event custom */}
         {isCustom && (
           <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-            <button onClick={onEdit} className="w-7 h-7 rounded-md hover:bg-amber-50 grid place-items-center text-slate-500 transition-colors">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z" /></svg>
-            </button>
-            <button onClick={onDelete} className="w-7 h-7 rounded-md hover:bg-red-50 grid place-items-center text-slate-500 transition-colors">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /></svg>
-            </button>
+            <Button variant="ghost" size="icon" onClick={onEdit} title="Sửa" className="size-7 rounded-md hover:bg-amber-50 text-slate-500">
+              <Pencil className="size-[13px]" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={onDelete} title="Xóa" className="size-7 rounded-md hover:bg-red-50 text-slate-500">
+              <Trash2 className="size-[13px]" />
+            </Button>
           </div>
         )}
       </div>
       {/* Badge loại sự kiện */}
-      <div className={`mt-3 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${meta.bgClass} ${meta.textClass} border ${meta.borderClass}`}>
+      <Badge variant="outline" className={`mt-3 gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${meta.bgClass} ${meta.textClass} ${meta.borderClass} [&>svg]:size-4`}>
         {meta.icon}{meta.label}
-      </div>
+      </Badge>
       {/* Tiêu đề */}
       <h3 className="font-bold text-base mt-2 leading-snug line-clamp-2 text-slate-900">{ev.title}</h3>
       {/* Ngày + badge âm lịch */}
       <div className="text-sm text-slate-600 mt-2 flex items-center gap-2">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2"><rect x="3" y="5" width="18" height="16" rx="2" /></svg>
+        <Calendar size={14} className="text-slate-400" />
         {formatEventDate(ev)}
         {ev.calendar === "lunar" && <span className="text-[10px] text-amber-700 font-bold">ÂL</span>}
       </div>

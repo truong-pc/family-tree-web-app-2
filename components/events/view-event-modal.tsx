@@ -11,10 +11,13 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { ArrowRight, Calendar } from "lucide-react"
 import { useAuthStore } from "@/lib/stores/auth-store"
 import { getPersonDetail } from "@/lib/api/person"
 import type { FamilyEvent } from "@/lib/api/events"
 import { getEventMeta, formatEventDate, formatRepeat } from "./event-helpers"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -22,7 +25,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog"
 
-// --- Types cho person detail API response ---
+// Types cho person detail API response 
 interface PersonRelation {
   personId: number
   name: string
@@ -115,59 +118,43 @@ export default function ViewEventModal({
   }, [ev, isCustom, token, chartId])
 
   // Không render gì nếu không có event
-  if (!ev) {
-    return (
-      <Dialog open={false} onOpenChange={() => { }}>
-        <DialogContent className="overflow-hidden p-0" showCloseButton={false}>
-          <DialogTitle className="sr-only">Sự kiện</DialogTitle>
-          <DialogDescription className="sr-only">Chi tiết sự kiện</DialogDescription>
-        </DialogContent>
-      </Dialog>
-    )
-  }
+  if (!ev) return null
 
   /** Hiển thị giới tính dạng text */
   const genderLabel = (g: string) => (g === "M" ? "Nam" : g === "F" ? "Nữ" : "Khác")
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose() }}>
-      <DialogContent
-        className="overflow-hidden p-0 rounded-3xl max-w-lg border border-slate-100"
-        showCloseButton={false}
-      >
+      <DialogContent className="overflow-hidden p-0 rounded-3xl max-w-lg border border-slate-100">
         {/* Ẩn title/description cho accessibility (nội dung tự custom) */}
         <DialogTitle className="sr-only">{ev.title}</DialogTitle>
         <DialogDescription className="sr-only">Chi tiết sự kiện {ev.title}</DialogDescription>
 
         <div className="overflow-y-auto max-h-[85vh]">
-          {/* ====== Header gradient ====== */}
+          {/* Header gradient */}
           <div className="px-7 pt-7 pb-6 relative" style={{ background: `linear-gradient(135deg, ${meta.gradientFrom}, #fff)` }}>
-            {/* Nút đóng */}
-            <button onClick={onClose} className="absolute top-4 right-4 w-9 h-9 rounded-lg hover:bg-white/80 grid place-items-center transition-colors">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="2"><path d="M18 6 6 18M6 6l12 12" /></svg>
-            </button>
             {/* Badge loại sự kiện */}
-            <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider ${meta.bgClass} ${meta.textClass} border ${meta.borderClass}`}>
+            <Badge variant="outline" className={`gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider ${meta.bgClass} ${meta.textClass} ${meta.borderClass} [&>svg]:size-4`}>
               {meta.icon} {meta.label}
-            </div>
+            </Badge>
             <h2 className="font-bold text-3xl mt-3 leading-tight text-slate-900">{ev.title}</h2>
             {/* Badges: ngày, loại lịch, lặp lại */}
             <div className="mt-3 flex items-center gap-2 flex-wrap text-sm">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/70 border border-slate-200 font-semibold text-slate-700">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="2"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M16 3v4M8 3v4M3 11h18" /></svg>
+              <Badge variant="outline" className="gap-1.5 px-2.5 py-1 rounded-lg bg-white/70 border-slate-200 text-sm font-semibold text-slate-700">
+                <Calendar size={14} className="text-slate-600" />
                 {formatEventDate(ev)}
-              </span>
+              </Badge>
               {ev.calendar === "lunar"
-                ? <span className="px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-100 text-amber-700 font-bold text-xs">Âm lịch</span>
-                : <span className="px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-100 text-blue-700 font-bold text-xs">Dương lịch</span>
+                ? <Badge variant="outline" className="px-2.5 py-1 rounded-lg bg-amber-50 border-amber-100 text-amber-700 font-bold text-xs">Âm lịch</Badge>
+                : <Badge variant="outline" className="px-2.5 py-1 rounded-lg bg-blue-50 border-blue-100 text-blue-700 font-bold text-xs">Dương lịch</Badge>
               }
-              <span className="px-2.5 py-1 rounded-lg bg-white/70 border border-slate-200 text-xs font-semibold text-slate-700">{formatRepeat(ev)}</span>
+              <Badge variant="outline" className="px-2.5 py-1 rounded-lg bg-white/70 border-slate-200 text-xs font-semibold text-slate-700">{formatRepeat(ev)}</Badge>
             </div>
           </div>
 
-          {/* ====== Body ====== */}
+          {/* Body */}
           <div className="px-7 py-6 space-y-5">
-            {/* --- Person detail cho birthday/death --- */}
+            {/* Person detail cho birthday/death */}
             {!isCustom && (
               <>
                 {personLoading && (
@@ -219,9 +206,9 @@ export default function ViewEventModal({
                         const mainBirthOrder = person.parents.find(p => p.birthOrder != null)?.birthOrder
                         if (!mainBirthOrder) return null
                         return (
-                          <span className="flex-shrink-0 text-xs font-bold px-2.5 py-1 rounded-full bg-amber-50 border border-amber-100 text-amber-700">
+                          <Badge variant="outline" className="flex-shrink-0 text-xs font-bold px-2.5 py-1 rounded-full bg-amber-50 border-amber-100 text-amber-700">
                             {mainBirthOrder === 1 ? "Con trưởng" : `Con thứ ${mainBirthOrder}`}
-                          </span>
+                          </Badge>
                         )
                       })()}
                     </div>
@@ -276,9 +263,11 @@ export default function ViewEventModal({
                                   {s.gender === "M" ? "♂" : "♀"}
                                 </span>
                                 <span className="font-semibold text-slate-900">{s.name}</span>
-                                <span className="text-[10px] text-slate-400 ml-auto">
-                                  {s.gender === "M" ? `` : (s.spouseOrder === 1 ? "Vợ cả" : `Vợ ${s.spouseOrder}`)}
-                                </span>
+                                {s.gender !== "M" && (
+                                  <span className="text-[10px] text-slate-400 ml-auto">
+                                    {s.spouseOrder === 1 ? "Vợ cả" : `Vợ ${s.spouseOrder}`}
+                                  </span>
+                                )}
                               </div>
                             ))
                           }
@@ -343,18 +332,20 @@ export default function ViewEventModal({
 
             {/* ====== Actions ====== */}
             {isCustom ? (
-              <div className="flex gap-2 pt-2">
-                <button onClick={onClose} className="flex-1 px-4 py-2.5 rounded-lg font-semibold border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors">Đóng</button>
-                <button onClick={onDelete} className="px-4 py-2.5 rounded-lg font-semibold text-red-600 border border-red-200 hover:bg-red-50 transition-colors">Xóa</button>
-                <button onClick={onEdit} className="px-4 py-2.5 rounded-lg font-semibold text-white transition-colors" style={{ background: "linear-gradient(135deg,#1d4ed8,#2563eb)" }}>Sửa sự kiện</button>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" onClick={onClose} className="px-4 py-2.5 h-auto rounded-lg font-semibold border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-700 shadow-none">Đóng</Button>
+                <Button variant="outline" onClick={onDelete} className="px-4 py-2.5 h-auto rounded-lg font-semibold text-red-600 border-red-200 hover:bg-red-50 hover:text-red-600 shadow-none">Xóa</Button>
+                <Button onClick={onEdit} className="px-4 py-2.5 h-auto rounded-lg font-semibold text-white hover:brightness-100" >Sửa sự kiện</Button>
               </div>
             ) : (
-              <div className="flex gap-2 pt-2">
-                <button onClick={onClose} className="flex-1 px-4 py-2.5 rounded-lg font-semibold border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors">Đóng</button>
-                <Link href={treeUrl} className="px-4 py-2.5 rounded-lg font-semibold text-white inline-flex items-center gap-2 transition-colors" style={{ background: "linear-gradient(135deg,#1d4ed8,#2563eb)" }}>
-                  Mở phả hệ
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.4"><path d="M5 12h14M13 5l7 7-7 7" /></svg>
-                </Link>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" onClick={onClose} className="px-4 py-2.5 h-auto rounded-lg font-semibold border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-700 shadow-none">Đóng</Button>
+                <Button asChild className="px-4 py-2.5 h-auto rounded-lg font-semibold text-white gap-2 hover:brightness-100">
+                  <Link href={treeUrl}>
+                    Mở phả hệ
+                    <ArrowRight size={14} strokeWidth={2.4} className="size-3.5" />
+                  </Link>
+                </Button>
               </div>
             )}
 

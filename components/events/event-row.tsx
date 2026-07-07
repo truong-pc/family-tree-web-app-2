@@ -5,12 +5,15 @@
  * Hàng hiển thị sự kiện dạng list (1 dòng ngang).
  * - Bên trái: block ngày/tháng có màu theo loại sự kiện
  * - Giữa: badge loại, tiêu đề, branch/mô tả
- * - Bên phải: nút xem/sửa/xóa (sửa+xóa chỉ cho custom)
+ * - Bên phải: nút sửa/xóa (chỉ cho custom)
  * - Click vào hàng → onView
  */
 
+import { Pencil, Trash2 } from "lucide-react"
 import type { FamilyEvent } from "@/lib/api/events"
-import { getEventMeta, formatEventDate, formatRepeat } from "./event-helpers"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { getEventMeta, formatRepeat } from "./event-helpers"
 
 export default function EventRow({
   ev,
@@ -43,11 +46,11 @@ export default function EventRow({
       {/* Thông tin giữa: badge + tiêu đề + branch */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${meta.bgClass} ${meta.textClass} border ${meta.borderClass}`}>
+          <Badge variant="outline" className={`gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${meta.bgClass} ${meta.textClass} ${meta.borderClass} [&>svg]:size-4`}>
             {meta.icon} {meta.label}
-          </span>
+          </Badge>
           {ev.calendar === "lunar" && (
-            <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">ÂL</span>
+            <Badge variant="outline" className="px-2 py-0.5 rounded-full text-[10px] font-bold text-amber-700 bg-amber-50 border-amber-100">ÂL</Badge>
           )}
           <span className="text-[10px] text-slate-500">{formatRepeat(ev)}</span>
         </div>
@@ -59,17 +62,14 @@ export default function EventRow({
 
       {/* Nút hành động bên phải */}
       <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-        <button onClick={onView} title="Xem" className="w-9 h-9 rounded-lg hover:bg-blue-50 grid place-items-center text-slate-600 hover:text-blue-700 transition-colors">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
-        </button>
         {isCustom && (
           <>
-            <button onClick={onEdit} title="Sửa" className="w-9 h-9 rounded-lg hover:bg-amber-50 grid place-items-center text-slate-600 hover:text-amber-700 transition-colors">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z" /></svg>
-            </button>
-            <button onClick={onDelete} title="Xóa" className="w-9 h-9 rounded-lg hover:bg-red-50 grid place-items-center text-slate-600 hover:text-red-700 transition-colors">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
-            </button>
+            <Button variant="ghost" size="icon" onClick={onEdit} title="Sửa" className="rounded-lg hover:bg-amber-50 text-slate-600 hover:text-amber-700">
+              <Pencil />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={onDelete} title="Xóa" className="rounded-lg hover:bg-red-50 text-slate-600 hover:text-red-700">
+              <Trash2 />
+            </Button>
           </>
         )}
       </div>
