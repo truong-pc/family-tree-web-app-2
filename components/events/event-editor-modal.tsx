@@ -182,10 +182,7 @@ export default function EventEditorModal({ open, ev, onClose, onSave }: EventEdi
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose() }}>
-      <DialogContent
-        className="overflow-hidden p-0 rounded-3xl max-w-2xl border border-slate-100"
-        onOpenAutoFocus={(e) => e.preventDefault()}
-      >
+      <DialogContent className="overflow-hidden p-0 rounded-3xl max-w-2xl border border-slate-100">
         <DialogTitle className="sr-only">{isEdit ? "Sửa sự kiện" : "Tạo sự kiện mới"}</DialogTitle>
         <DialogDescription className="sr-only">Form tạo hoặc sửa sự kiện gia phả</DialogDescription>
 
@@ -403,7 +400,7 @@ export default function EventEditorModal({ open, ev, onClose, onSave }: EventEdi
           {/* Footer actions */}
           <div className="px-7 py-4 border-t border-slate-100 bg-slate-50/50 flex gap-2 justify-end">
             <Button type="button" variant="outline" onClick={onClose} className="px-5 py-2.5 h-auto rounded-lg font-semibold border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-700 shadow-none">Hủy</Button>
-            <Button type="submit" className="px-5 py-2.5 h-auto rounded-lg font-semibold text-white shadow-md gap-2 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:brightness-100" style={{ background: "linear-gradient(135deg,#1d4ed8,#2563eb)" }}>
+            <Button type="submit" className="px-5 py-2.5 h-auto rounded-lg font-semibold text-white shadow-md gap-2 transition-all hover:shadow-lg hover:brightness-100">
               <Check size={16} strokeWidth={2.4} />
               {isEdit ? "Lưu thay đổi" : "Tạo sự kiện"}
             </Button>
