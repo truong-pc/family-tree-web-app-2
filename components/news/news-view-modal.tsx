@@ -122,7 +122,7 @@ export default function NewsViewModal({
                   <button onClick={onDelete} className="px-4 py-2.5 rounded-lg font-semibold border border-red-200 bg-white text-red-600 hover:bg-red-50 transition-colors inline-flex items-center gap-2">
                     <Trash2 className="w-4 h-4" /> Xóa
                   </button>
-                  <button onClick={onEdit} className="px-4 py-2.5 rounded-lg font-semibold text-white shadow-md inline-flex items-center gap-2 transition-all hover:-translate-y-0.5" style={{ background: "linear-gradient(135deg,#4338CA,#4F46E5)" }}>
+                  <button onClick={onEdit} className="px-4 py-2.5 rounded-lg font-semibold text-white shadow-md inline-flex items-center gap-2 transition-all hover:brightness-120" style={{ background: "linear-gradient(135deg,#4338CA,#4F46E5)" }}>
                     <Pencil className="w-4 h-4" /> Sửa
                   </button>
                 </>
