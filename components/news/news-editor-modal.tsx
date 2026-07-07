@@ -244,7 +244,7 @@ export default function NewsEditorModal({
             </p>
           </div>
 
-          <div className="px-7 pb-6 space-y-5">
+          <div className="px-7 py-6 space-y-5">
             {/* Tiêu đề */}
             <div>
               <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-1.5">

@@ -182,7 +182,10 @@ export default function EventEditorModal({ open, ev, onClose, onSave }: EventEdi
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose() }}>
-      <DialogContent className="overflow-hidden p-0 rounded-3xl max-w-2xl border border-slate-100">
+      <DialogContent
+        className="overflow-hidden p-0 rounded-3xl max-w-2xl border border-slate-100"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
         <DialogTitle className="sr-only">{isEdit ? "Sửa sự kiện" : "Tạo sự kiện mới"}</DialogTitle>
         <DialogDescription className="sr-only">Form tạo hoặc sửa sự kiện gia phả</DialogDescription>
 
@@ -194,7 +197,7 @@ export default function EventEditorModal({ open, ev, onClose, onSave }: EventEdi
             <p className="text-sm text-slate-500 mt-1">Sự kiện tự tạo: họp họ, lễ tộc, khánh thành. Không dùng cho sinh nhật/giỗ (lấy từ phả hệ).</p>
           </div>
 
-          <div className="px-7 pb-6 space-y-5">
+          <div className="px-7 py-6 space-y-5">
             {/* Tên sự kiện  */}
             <div>
               <div className="flex items-baseline justify-between mb-1.5">
