@@ -46,7 +46,7 @@ export default function NewsManagePage({ chartId }: { chartId: string }) {
     [isOwner, user?.id]
   )
 
-  // --- Fetch ---
+  // Fetch 
   const fetchPosts = useCallback(() => {
     if (!token || !chartId) {
       setLoading(false)
@@ -73,7 +73,7 @@ export default function NewsManagePage({ chartId }: { chartId: string }) {
 
   useEffect(() => { fetchPosts() }, [fetchPosts])
 
-  // --- Filter ---
+  // Filter 
   const filtered = useMemo(() => {
     let list = posts
     if (tab === "mine") list = list.filter((p) => p.authorId === user?.id)
@@ -94,7 +94,7 @@ export default function NewsManagePage({ chartId }: { chartId: string }) {
     { id: "internal", label: "Nội bộ" },
   ]
 
-  // --- CRUD ---
+  // CRUD 
   const handleCreate = useCallback(async (payload: NewsFormPayload) => {
     if (!token || !chartId) return
     setSaving(true)
@@ -218,7 +218,7 @@ export default function NewsManagePage({ chartId }: { chartId: string }) {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Tìm bài viết…"
-                  className="text-sm bg-transparent focus:outline-none w-full placeholder:text-slate-400"
+                  className="text-base md:text-sm bg-transparent focus:outline-none w-full placeholder:text-slate-400"
                 />
               </div>
             </div>

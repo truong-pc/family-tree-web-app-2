@@ -7,10 +7,11 @@
  * - Filter, sort, tìm kiếm sự kiện
  * - Quản lý CRUD: tạo, sửa, xóa (confirm), xem chi tiết
  * - Toast thông báo qua shadcn useToast (thay vì custom toast)
- * - Xóa dùng window.confirm() (thay vì DeleteModal)
+ * - Xóa dùng window.confirm()
  */
 
 import { useState, useMemo, useEffect, useCallback, useRef } from "react"
+import { LayoutGrid, List, Loader2, Plus, Search, TriangleAlert } from "lucide-react"
 import { useAuthStore } from "@/lib/stores/auth-store"
 import { useToast } from "@/hooks/use-toast"
 import * as eventsApi from "@/lib/api/events"
@@ -23,6 +24,11 @@ import EventRow from "./event-row"
 import EventGridCard from "./event-grid-card"
 import ViewEventModal from "./view-event-modal"
 import EventEditorModal, { type EventForm } from "./event-editor-modal"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import {
   Select,
   SelectContent,
@@ -33,11 +39,15 @@ import {
 
 const ITEMS_PER_PAGE = 20
 
+/** Key ổn định cho list render */
+const eventKey = (ev: FamilyEvent | UpcomingEvent) =>
+  `${ev.type}-${ev.sourceId ?? ev.title}-${ev.day}-${ev.month}`
+
 export default function EventsPageContent({ chartId }: { chartId: string }) {
   const { token } = useAuthStore()
   const { toast } = useToast()
 
-  // --- State ---
+  // State
   const [calendarData, setCalendarData] = useState<CalendarToday | null>(null)
   const [events, setEvents] = useState<FamilyEvent[]>([])
   const [upcoming, setUpcoming] = useState<UpcomingEvent[]>([])
@@ -61,7 +71,7 @@ export default function EventsPageContent({ chartId }: { chartId: string }) {
   const [editing, setEditing] = useState<FamilyEvent | null>(null)
   const [creating, setCreating] = useState(false)
 
-  // --- Fetch dữ liệu ---
+  // Fetch dữ liệu
 
   /** Lấy dữ liệu lịch âm dương hôm nay (không cần auth) */
   useEffect(() => {
@@ -112,7 +122,7 @@ export default function EventsPageContent({ chartId }: { chartId: string }) {
     fetchEventsData()
   }, [fetchEventsData])
 
-  // --- Thống kê & Filter ---
+  // Thống kê & Filter
 
   /** Đếm số lượng sự kiện theo từng loại */
   const counts = useMemo(() => ({
@@ -169,7 +179,7 @@ export default function EventsPageContent({ chartId }: { chartId: string }) {
     return () => observer.disconnect()
   }, [filtered.length])
 
-  // --- Handlers CRUD ---
+  // Handlers CRUD 
 
   const handleViewEvent = useCallback((ev: FamilyEvent) => {
     setViewing(ev)
@@ -182,9 +192,7 @@ export default function EventsPageContent({ chartId }: { chartId: string }) {
       await eventsApi.createEvent(token, chartId, form)
       setCreating(false)
       toast({ title: "Đã tạo sự kiện", description: form.title })
-      // Response của createEvent thiếu sourceId/type → fetch lại danh sách
-      // để lấy dữ liệu chuẩn từ server (tránh crash & nhận diện sai loại).
-      // Refetch cả upcoming nếu event mới nằm trong khoảng.
+
       Promise.all([
         eventsApi.getEvents(token, chartId),
         eventsApi.getUpcomingEvents(token, chartId, upcomingDays),
@@ -231,10 +239,7 @@ export default function EventsPageContent({ chartId }: { chartId: string }) {
     }
   }, [editing, token, chartId, upcomingDays, toast])
 
-  /**
-   * Xóa sự kiện — dùng window.confirm() thay vì DeleteModal.
-   * Nhận trực tiếp event cần xóa (không cần state `deleting`).
-   */
+  /** Xóa sự kiện — dùng window.confirm() thay vì DeleteModal */
   const handleDelete = useCallback(async (ev: FamilyEvent) => {
     const confirmed = window.confirm(`Bạn có chắc muốn xóa sự kiện "${ev.title}"? Hành động này không thể hoàn tác.`)
     if (!confirmed) return
@@ -257,7 +262,7 @@ export default function EventsPageContent({ chartId }: { chartId: string }) {
     }
   }, [token, chartId, toast])
 
-  // --- Tab filters ---
+  // Tab filters
   const tabs = [
     { id: "all" as const, label: "Tất cả", count: counts.total },
     { id: "birthday" as const, label: "Sinh nhật", count: counts.birthday },
@@ -265,7 +270,7 @@ export default function EventsPageContent({ chartId }: { chartId: string }) {
     { id: "custom" as const, label: "Tự tạo", count: counts.custom },
   ]
 
-  // --- Render ---
+  // Render 
   return (
     <div className="relative min-h-screen pb-16 overflow-x-hidden" style={{ background: "radial-gradient(1200px 700px at -10% -10%, rgba(59,130,246,.08), transparent 60%), radial-gradient(900px 600px at 110% 10%, rgba(245,158,11,.08), transparent 60%), linear-gradient(180deg, #fbfdff 0%, #fff8ef 100%)" }}>
       {/* Background blobs trang trí */}
@@ -274,9 +279,9 @@ export default function EventsPageContent({ chartId }: { chartId: string }) {
 
       <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-10">
 
-        {/* ====== Lunar Calendar Banner ====== */}
+        {/* Lunar Calendar Banner */}
         {calendarLoading ? (
-          <div className="rounded-3xl h-48 animate-pulse bg-teal-900/20" />
+          <Skeleton className="rounded-3xl h-48 bg-teal-900/20" />
         ) : calendarData ? (
           <LunarCalendarBanner data={calendarData} />
         ) : (
@@ -285,41 +290,41 @@ export default function EventsPageContent({ chartId }: { chartId: string }) {
           </div>
         )}
 
-        {/* ====== Page Title + Nút tạo mới ====== */}
+        {/* Page Title + Nút tạo mới */}
         <div className="flex items-end justify-between flex-wrap gap-6">
           <div>
             <div className="text-[11px] uppercase tracking-[.18em] font-bold text-amber-600/90">Sự kiện gia phả</div>
             <h1 className="font-bold text-4xl lg:text-5xl mt-2 text-slate-900">Sinh nhật · Giỗ chạp · Lễ tộc</h1>
             <p className="text-slate-600 mt-3 max-w-2xl">Theo dõi và tổ chức các sự kiện quan trọng của dòng họ. Sinh nhật và ngày giỗ tự động lấy từ phả hệ; các sự kiện khác bạn có thể tự tạo.</p>
           </div>
-          <button
+          <Button
             onClick={() => setCreating(true)}
-            className="px-5 py-3 rounded-xl text-white font-semibold shadow-md inline-flex items-center gap-2 transition-all hover:-translate-y-0.5 hover:shadow-lg"
-            style={{ background: "linear-gradient(135deg,#1d4ed8,#2563eb)", boxShadow: "0 4px 12px -2px rgba(29,78,216,.30)" }}
+            className="px-5 py-2.5 min-h-12 h-auto rounded-xl text-white font-semibold shadow-md gap-2 transition-all hover:-translate-y-0.5 hover:shadow-lg"
+            style={{ background: "linear-gradient(135deg,#4338CA,#4F46E5)" }}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.4"><path d="M12 5v14M5 12h14" /></svg>
+            <Plus size={18} strokeWidth={2.4} className="size-[18px]" />
             Tạo sự kiện mới
-          </button>
+          </Button>
         </div>
 
-        {/* ====== Error block khi API lỗi ====== */}
+        {/* Error block khi API lỗi */}
         {error ? (
           <div className="rounded-2xl p-10 text-center border-2 border-dashed border-red-200 bg-red-50/50" style={{ backdropFilter: "blur(12px)" }}>
             <div className="w-14 h-14 mx-auto rounded-full bg-red-100 border border-red-200 grid place-items-center mb-4">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2.5"><path d="m10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /></svg>
+              <TriangleAlert size={24} strokeWidth={2.5} className="text-red-600" />
             </div>
             <h3 className="font-bold text-xl text-red-950 mb-2">Đã xảy ra lỗi kết nối</h3>
             <p className="text-sm text-red-700 max-w-md mx-auto mb-6">{error}</p>
-            <button
+            <Button
               onClick={fetchEventsData}
-              className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-xl transition-all shadow-md active:scale-95"
+              className="px-5 py-2.5 h-auto bg-red-600 hover:bg-red-700 hover:brightness-100 text-white text-sm font-semibold rounded-xl transition-all shadow-md active:scale-95"
             >
               Thử lại
-            </button>
+            </Button>
           </div>
         ) : (
           <>
-            {/* ====== Upcoming Events ====== */}
+            {/* Upcoming Events */}
             <section>
               <div className="flex items-end justify-between mb-5">
                 <div>
@@ -327,23 +332,25 @@ export default function EventsPageContent({ chartId }: { chartId: string }) {
                   <h2 className="font-bold text-2xl mt-1 text-slate-900">Sự kiện gần</h2>
                 </div>
                 {/* Toggle khoảng thời gian upcoming */}
-                <div className="flex items-center gap-1 p-1 rounded-full text-xs font-semibold" style={{ background: "#f1f5f9" }}>
-                  {([7, 30, 90] as const).map((d) => (
-                    <button
-                      key={d}
-                      onClick={() => setUpcomingDays(d)}
-                      className={`px-3 py-1.5 rounded-full transition-all ${upcomingDays === d ? "bg-white shadow-sm text-slate-900" : "text-slate-500 hover:text-slate-700"}`}
-                    >
-                      {d} ngày
-                    </button>
-                  ))}
-                </div>
+                <Tabs value={String(upcomingDays)} onValueChange={(v) => setUpcomingDays(Number(v) as 7 | 30 | 90)}>
+                  <TabsList className="h-auto items-center gap-1 p-1 rounded-full text-xs font-semibold" style={{ background: "#f1f5f9" }}>
+                    {([7, 30, 90] as const).map((d) => (
+                      <TabsTrigger
+                        key={d}
+                        value={String(d)}
+                        className="h-auto flex-none border-0 px-2.5 py-1.5 rounded-full text-xs font-semibold transition-all text-slate-500 hover:text-slate-700 data-[state=active]:bg-white data-[state=active]:text-slate-900"
+                      >
+                        {d} ngày
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                </Tabs>
               </div>
 
               {eventsLoading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   {Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="rounded-2xl h-40 animate-pulse bg-slate-100" />
+                    <Skeleton key={i} className="rounded-2xl h-40 bg-slate-100" />
                   ))}
                 </div>
               ) : upcoming.length === 0 ? (
@@ -352,14 +359,14 @@ export default function EventsPageContent({ chartId }: { chartId: string }) {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {upcoming.map((ev, idx) => (
-                    <UpcomingCard key={`${ev.sourceId || ev.type}-${idx}`} ev={ev} onClick={() => handleViewEvent(ev)} />
+                  {upcoming.map((ev) => (
+                    <UpcomingCard key={eventKey(ev)} ev={ev} onClick={() => handleViewEvent(ev)} />
                   ))}
                 </div>
               )}
             </section>
 
-            {/* ====== All Events ====== */}
+            {/* All Events */}
             <section>
               <div className="mb-5">
                 <div className="text-[11px] uppercase tracking-[.18em] font-bold text-amber-600/90">Tất cả sự kiện</div>
@@ -370,32 +377,34 @@ export default function EventsPageContent({ chartId }: { chartId: string }) {
               <div className="rounded-2xl p-3 md:p-4 mb-5" style={{ background: "rgba(255,255,255,.60)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,.60)" }}>
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   {/* Tab lọc theo loại */}
-                  <div className="flex items-center gap-1 p-1 rounded-full text-sm font-semibold overflow-x-auto max-w-full" style={{ background: "rgba(241,245,249,.70)" }}>
-                    {tabs.map((t) => {
-                      const active = filterType === t.id
-                      return (
-                        <button
-                          key={t.id}
-                          onClick={() => setFilterType(t.id)}
-                          className={`px-3.5 py-1.5 rounded-full whitespace-nowrap inline-flex items-center gap-2 transition-all ${active ? "bg-white shadow-sm text-slate-900" : "text-slate-600 hover:text-slate-900"}`}
-                        >
-                          {t.label}
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${active ? "bg-blue-100 text-blue-700" : "bg-slate-200 text-slate-600"}`}>{t.count}</span>
-                        </button>
-                      )
-                    })}
-                  </div>
+                  <Tabs value={filterType} onValueChange={(v) => setFilterType(v as typeof filterType)} className="max-w-full">
+                    <TabsList className="h-auto items-center gap-1 p-1 rounded-full text-sm font-semibold overflow-x-auto max-w-full justify-start" style={{ background: "rgba(241,245,249,.70)" }}>
+                      {tabs.map((t) => {
+                        const active = filterType === t.id
+                        return (
+                          <TabsTrigger
+                            key={t.id}
+                            value={t.id}
+                            className="h-auto flex-none border-0 px-3.5 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap gap-2 transition-all text-slate-600 hover:text-slate-900 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-slate-900"
+                          >
+                            {t.label}
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${active ? "bg-blue-100 text-blue-700" : "bg-slate-200 text-slate-600"}`}>{t.count}</span>
+                          </TabsTrigger>
+                        )
+                      })}
+                    </TabsList>
+                  </Tabs>
 
                   {/* Thanh công cụ bên phải: tìm kiếm, sắp xếp, chế độ xem */}
                   <div className="flex items-center gap-2 flex-wrap">
                     {/* Search input */}
                     <div className="relative">
-                      <svg className="absolute left-3 top-2.5" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>
-                      <input
+                      <Search size={16} className="absolute left-3 top-2.5 text-slate-400 pointer-events-none" />
+                      <Input
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         placeholder="Tìm sự kiện…"
-                        className="pl-9 pr-3 py-2 w-48 md:w-56 rounded-lg bg-white/80 border border-slate-200 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                        className="pl-9 pr-3 py-2 h-auto w-48 md:w-56 rounded-lg bg-white/80 border-slate-200 shadow-none focus-visible:ring-blue-500/20"
                       />
                     </div>
 
@@ -416,38 +425,43 @@ export default function EventsPageContent({ chartId }: { chartId: string }) {
                     </Select>
 
                     {/* View toggle: list / grid */}
-                    <div className="flex p-0.5 rounded-lg bg-slate-100 border border-slate-200">
-                      <button onClick={() => setView("list")} className={`px-2 py-1.5 rounded grid place-items-center transition-all ${view === "list" ? "bg-white shadow-sm" : ""}`}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="2"><path d="M3 6h18M3 12h18M3 18h18" /></svg>
-                      </button>
-                      <button onClick={() => setView("grid")} className={`px-2 py-1.5 rounded grid place-items-center transition-all ${view === "grid" ? "bg-white shadow-sm" : ""}`}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="2"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>
-                      </button>
-                    </div>
+                    <ToggleGroup
+                      type="single"
+                      value={view}
+                      onValueChange={(v) => { if (v) setView(v as typeof view) }}
+                      className="p-0.5 rounded-lg bg-slate-100 border border-slate-200"
+                    >
+                      <ToggleGroupItem value="list" aria-label="Xem dạng danh sách" className="h-auto min-w-0 flex-none px-2 py-1.5 rounded first:rounded last:rounded bg-transparent hover:bg-transparent transition-all data-[state=on]:bg-white data-[state=on]:shadow-sm">
+                        <List className="size-3.5 text-slate-600" />
+                      </ToggleGroupItem>
+                      <ToggleGroupItem value="grid" aria-label="Xem dạng lưới" className="h-auto min-w-0 flex-none px-2 py-1.5 rounded first:rounded last:rounded bg-transparent hover:bg-transparent transition-all data-[state=on]:bg-white data-[state=on]:shadow-sm">
+                        <LayoutGrid className="size-3.5 text-slate-600" />
+                      </ToggleGroupItem>
+                    </ToggleGroup>
                   </div>
                 </div>
               </div>
 
-              {/* ====== Event List / Grid ====== */}
+              {/* Event List / Grid */}
               {eventsLoading ? (
                 <div className={view === "grid" ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" : "space-y-2.5"}>
                   {Array.from({ length: 6 }).map((_, i) => (
-                    <div key={i} className={`rounded-2xl animate-pulse bg-slate-100 ${view === "grid" ? "h-48" : "h-24"}`} />
+                    <Skeleton key={i} className={`rounded-2xl bg-slate-100 ${view === "grid" ? "h-48" : "h-24"}`} />
                   ))}
                 </div>
               ) : filtered.length === 0 ? (
                 <div className="rounded-2xl py-16 text-center shadow-sm" style={{ background: "rgba(255,255,255,.60)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,.60)" }}>
                   <div className="w-16 h-16 mx-auto rounded-2xl grid place-items-center mb-4" style={{ background: "linear-gradient(135deg, #3b82f6 0%, #f59e0b 100%)" }}>
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+                    <Search size={28} className="text-white" />
                   </div>
                   <h3 className="font-bold text-lg text-slate-900">Không tìm thấy sự kiện</h3>
                   <p className="text-sm text-slate-500 mt-1.5 max-w-xs mx-auto">Thử đổi bộ lọc hoặc tạo sự kiện mới cho dòng họ của bạn.</p>
                 </div>
               ) : view === "grid" ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {displayedEvents.map((ev, idx) => (
+                  {displayedEvents.map((ev) => (
                     <EventGridCard
-                      key={`${ev.sourceId || ev.type}-${idx}`} ev={ev}
+                      key={eventKey(ev)} ev={ev}
                       onView={() => handleViewEvent(ev)}
                       onEdit={() => setEditing(ev)}
                       onDelete={() => handleDelete(ev)}
@@ -456,9 +470,9 @@ export default function EventsPageContent({ chartId }: { chartId: string }) {
                 </div>
               ) : (
                 <div className="space-y-2.5">
-                  {displayedEvents.map((ev, idx) => (
+                  {displayedEvents.map((ev) => (
                     <EventRow
-                      key={`${ev.sourceId || ev.type}-${idx}`} ev={ev}
+                      key={eventKey(ev)} ev={ev}
                       onView={() => handleViewEvent(ev)}
                       onEdit={() => setEditing(ev)}
                       onDelete={() => handleDelete(ev)}
@@ -470,23 +484,16 @@ export default function EventsPageContent({ chartId }: { chartId: string }) {
               {/* Sentinel + thông tin số lượng */}
               {hasMore && (
                 <div ref={sentinelRef} className="flex items-center justify-center gap-2 py-8 text-sm text-slate-400">
-                  <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="32" strokeLinecap="round" />
-                  </svg>
+                  <Loader2 className="w-5 h-5 animate-spin" />
                   Đang tải thêm… ({displayedEvents.length}/{filtered.length})
                 </div>
               )}
-              {/* {!hasMore && filtered.length > ITEMS_PER_PAGE && (
-                <div className="text-center py-6 text-xs text-slate-400">
-                  Hiển thị tất cả {filtered.length} sự kiện
-                </div>
-              )} */}
             </section>
           </>
         )}
       </div>
 
-      {/* ====== Modals ====== */}
+      {/* Modals */}
       {/* Modal xem chi tiết sự kiện */}
       <ViewEventModal
         ev={viewing}
