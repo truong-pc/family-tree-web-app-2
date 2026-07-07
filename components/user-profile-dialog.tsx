@@ -166,7 +166,7 @@ export function UserProfileDialog({
             </div>
             <DialogFooter>
               <Button type="submit" disabled={saving}>
-                {saving ? ("Đang lưu...") : ("Lưu thay đổi")}
+                {saving ? "Đang lưu..." : "Lưu thay đổi"}
               </Button>
             </DialogFooter>
           </form>
