@@ -173,7 +173,7 @@ export default function NewsManagePage({ chartId }: { chartId: string }) {
         <div className="flex items-end justify-between gap-4 flex-wrap">
           <div>
             <p className="text-[12px] font-semibold tracking-[0.12em] text-amber-600 uppercase mb-2">Quản lý tin tức</p>
-            <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Quản lý bài viết</h1>
+            <h1 className="text-3xl md:text-5xl font-bold text-slate-900">Quản lý bài viết</h1>
             <p className="text-sm text-slate-500 mt-2">Soạn, chỉnh sửa và chọn phạm vi công khai cho tin tức của gia phả này.</p>
           </div>
           <button

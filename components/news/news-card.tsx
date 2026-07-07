@@ -47,7 +47,6 @@ export function NewsFeaturedCard({ post }: { post: NewsCardOut }) {
       <div className="flex flex-col md:flex-row rounded-2xl overflow-hidden transition-transform hover:-translate-y-0.5" style={glass}>
         <div className="md:w-[42%] min-h-[180px] relative" style={{ background: coverGradient(post.postId) }}>
           {post.coverImageUrl && (
-            // eslint-disable-next-line @next/next/no-img-element
             <img src={post.coverImageUrl} alt={post.title} className="absolute inset-0 w-full h-full object-cover" />
           )}
           <span className="absolute top-3 left-3 text-[11px] px-2.5 py-1 rounded-full bg-white/90 text-indigo-700 font-semibold">

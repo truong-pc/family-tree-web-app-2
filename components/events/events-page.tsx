@@ -272,7 +272,12 @@ export default function EventsPageContent({ chartId }: { chartId: string }) {
 
   // Render 
   return (
-    <div className="relative min-h-screen pb-16 overflow-x-hidden" style={{ background: "radial-gradient(1200px 700px at -10% -10%, rgba(59,130,246,.08), transparent 60%), radial-gradient(900px 600px at 110% 10%, rgba(245,158,11,.08), transparent 60%), linear-gradient(180deg, #fbfdff 0%, #fff8ef 100%)" }}>
+    <div className="relative min-h-screen pb-16 overflow-x-hidden" 
+      style={{ 
+        background:
+          "radial-gradient(at 18% 12%, rgba(129,140,248,0.22), transparent 50%), radial-gradient(at 88% 16%, rgba(56,189,248,0.18), transparent 50%), #eef0fb",
+      }}
+    >
       {/* Background blobs trang trí */}
       <div className="absolute w-[520px] h-[520px] rounded-full pointer-events-none -z-10" style={{ background: "rgba(59,130,246,.30)", filter: "blur(60px)", top: -180, left: -160 }} />
       <div className="absolute w-[440px] h-[440px] rounded-full pointer-events-none -z-10" style={{ background: "rgba(245,158,11,.30)", filter: "blur(60px)", top: 200, right: -160 }} />
@@ -294,8 +299,8 @@ export default function EventsPageContent({ chartId }: { chartId: string }) {
         <div className="flex items-end justify-between flex-wrap gap-6">
           <div>
             <div className="text-[11px] uppercase tracking-[.18em] font-bold text-amber-600/90">Sự kiện gia phả</div>
-            <h1 className="font-bold text-4xl lg:text-5xl mt-2 text-slate-900">Sinh nhật · Giỗ chạp · Lễ tộc</h1>
-            <p className="text-slate-600 mt-3 max-w-2xl">Theo dõi và tổ chức các sự kiện quan trọng của dòng họ. Sinh nhật và ngày giỗ tự động lấy từ phả hệ; các sự kiện khác bạn có thể tự tạo.</p>
+            <h1 className="font-bold text-3xl md:text-5xl mt-2 text-slate-900">Sinh nhật · Giỗ chạp · Lễ tộc</h1>
+            <p className="text-slate-500 mt-3 max-w-2xl">Theo dõi và tổ chức các sự kiện quan trọng của dòng họ. Sinh nhật và ngày giỗ tự động lấy từ phả hệ; các sự kiện khác bạn có thể tự tạo.</p>
           </div>
           <Button
             onClick={() => setCreating(true)}
@@ -374,7 +379,7 @@ export default function EventsPageContent({ chartId }: { chartId: string }) {
               </div>
 
               {/* Filter Bar */}
-              <div className="rounded-2xl p-3 md:p-4 mb-5" style={{ background: "rgba(255,255,255,.60)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,.60)" }}>
+              <div className="rounded-2xl p-3 md:p-4 mb-5">
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   {/* Tab lọc theo loại */}
                   <Tabs value={filterType} onValueChange={(v) => setFilterType(v as typeof filterType)} className="max-w-full">
