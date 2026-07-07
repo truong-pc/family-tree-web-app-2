@@ -396,15 +396,15 @@ export default function EventsPageContent({ chartId }: { chartId: string }) {
                   </Tabs>
 
                   {/* Thanh công cụ bên phải: tìm kiếm, sắp xếp, chế độ xem */}
-                  <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex w-full md:w-auto items-center gap-2 flex-wrap justify-end">
                     {/* Search input */}
-                    <div className="relative">
-                      <Search size={16} className="absolute left-3 top-2.5 text-slate-400 pointer-events-none" />
+                    <div className="relative flex-1 min-w-[200px]">
+                      <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 pointer-events-none" />
                       <Input
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         placeholder="Tìm sự kiện…"
-                        className="pl-9 pr-3 py-2 h-auto w-48 md:w-56 rounded-lg bg-white/80 border-slate-200 shadow-none focus-visible:ring-blue-500/20"
+                        className="pl-9 pr-3 py-2 h-auto md:w-56 rounded-lg bg-white/80 border-slate-200 shadow-none focus-visible:ring-blue-500/20"
                       />
                     </div>
 
