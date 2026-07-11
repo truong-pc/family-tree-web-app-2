@@ -244,7 +244,7 @@ export default function NewsEditorModal({
             </p>
           </div>
 
-          <div className="px-7 pb-6 space-y-5">
+          <div className="px-7 py-6 space-y-5">
             {/* Tiêu đề */}
             <div>
               <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-1.5">
@@ -411,7 +411,7 @@ export default function NewsEditorModal({
                 type="button"
                 onClick={() => submit(isPublic)}
                 disabled={saving || uploading}
-                className="px-5 py-2.5 rounded-lg font-semibold text-white shadow-md inline-flex items-center gap-2 transition-all hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-60 disabled:hover:translate-y-0"
+                className="px-5 py-2.5 rounded-lg font-semibold text-white shadow-md inline-flex items-center gap-2 transition-all hover:shadow-lg hover:brightness-120 disabled:opacity-60"
                 style={{ background: "linear-gradient(135deg,#4338CA,#4F46E5)" }}
               >
                 {saving && <Loader2 className="w-4 h-4 animate-spin" />}
@@ -432,7 +432,7 @@ export default function NewsEditorModal({
                   type="button"
                   onClick={() => submit(true)}
                   disabled={saving || uploading}
-                  className="px-5 py-2.5 rounded-lg font-semibold text-white shadow-md inline-flex items-center gap-2 transition-all hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-60 disabled:hover:translate-y-0"
+                  className="px-5 py-2.5 rounded-lg font-semibold text-white shadow-md inline-flex items-center gap-2 transition-all hover:brightness-120 hover:shadow-lg disabled:opacity-60"
                   style={{ background: "linear-gradient(135deg,#4338CA,#4F46E5)" }}
                 >
                   {saving && <Loader2 className="w-4 h-4 animate-spin" />}

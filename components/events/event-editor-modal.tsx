@@ -10,7 +10,7 @@
  */
 
 import { useState, useEffect } from "react"
-import { Check } from "lucide-react"
+import { Check, Loader2 } from "lucide-react"
 import type { FamilyEvent } from "@/lib/api/events"
 import { formatRepeat } from "./event-helpers"
 import { Button } from "@/components/ui/button"
@@ -47,11 +47,12 @@ export type EventForm = {
 interface EventEditorModalProps {
   open: boolean // controlled open/close từ parent
   ev: FamilyEvent | null // null = tạo mới, có giá trị = sửa
+  saving?: boolean
   onClose: () => void
   onSave: (form: EventForm) => void
 }
 
-export default function EventEditorModal({ open, ev, onClose, onSave }: EventEditorModalProps) {
+export default function EventEditorModal({ open, ev, saving = false, onClose, onSave }: EventEditorModalProps) {
   const isEdit = !!ev
 
   // Form state 
@@ -181,7 +182,7 @@ export default function EventEditorModal({ open, ev, onClose, onSave }: EventEdi
   }
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose() }}>
+    <Dialog open={open} onOpenChange={(o) => { if (!o && !saving) onClose() }}>
       <DialogContent className="overflow-hidden p-0 rounded-3xl max-w-2xl border border-slate-100">
         <DialogTitle className="sr-only">{isEdit ? "Sửa sự kiện" : "Tạo sự kiện mới"}</DialogTitle>
         <DialogDescription className="sr-only">Form tạo hoặc sửa sự kiện gia phả</DialogDescription>
@@ -194,7 +195,7 @@ export default function EventEditorModal({ open, ev, onClose, onSave }: EventEdi
             <p className="text-sm text-slate-500 mt-1">Sự kiện tự tạo: họp họ, lễ tộc, khánh thành. Không dùng cho sinh nhật/giỗ (lấy từ phả hệ).</p>
           </div>
 
-          <div className="px-7 pb-6 space-y-5">
+          <div className="px-7 py-6 space-y-5">
             {/* Tên sự kiện  */}
             <div>
               <div className="flex items-baseline justify-between mb-1.5">
@@ -399,9 +400,11 @@ export default function EventEditorModal({ open, ev, onClose, onSave }: EventEdi
 
           {/* Footer actions */}
           <div className="px-7 py-4 border-t border-slate-100 bg-slate-50/50 flex gap-2 justify-end">
-            <Button type="button" variant="outline" onClick={onClose} className="px-5 py-2.5 h-auto rounded-lg font-semibold border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-700 shadow-none">Hủy</Button>
-            <Button type="submit" className="px-5 py-2.5 h-auto rounded-lg font-semibold text-white shadow-md gap-2 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:brightness-100" style={{ background: "linear-gradient(135deg,#1d4ed8,#2563eb)" }}>
-              <Check size={16} strokeWidth={2.4} />
+            <Button type="button" variant="outline" onClick={onClose} disabled={saving} className="px-5 py-2.5 h-auto rounded-lg font-semibold border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-700 shadow-none disabled:opacity-60">
+              Hủy
+            </Button>
+            <Button type="submit" disabled={saving} className="px-5 py-2.5 h-auto rounded-lg font-semibold text-white shadow-md gap-2 transition-all hover:shadow-lg hover:brightness-100 disabled:opacity-60">
+              {saving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} strokeWidth={2.4} />}
               {isEdit ? "Lưu thay đổi" : "Tạo sự kiện"}
             </Button>
           </div>

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import * as chartApi from "@/lib/api/chart"
 import { useAuthStore } from "@/lib/stores/auth-store"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -41,6 +41,7 @@ export default function UserChartSection() {
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isEditorsOpen, setIsEditorsOpen] = useState(false)
+  const [isSavingEditor, setIsSavingEditor] = useState(false)
   
   const [formData, setFormData] = useState({ name: "", description: "", published: false })
   const [editorEmail, setEditorEmail] = useState("")
@@ -68,13 +69,9 @@ export default function UserChartSection() {
 
   const fetchMyChart = async () => {
     if (!token) return
-    setIsLoading(true)
     try {
       const data = await chartApi.getMyChart(token!)
       setChart(data)
-      if (data && data.editors) {
-        await fetchEditorsInfo(data.editors)
-      }
     } catch (error) {
       console.error("Failed to fetch my chart", error)
     } finally {
@@ -86,23 +83,33 @@ export default function UserChartSection() {
     fetchMyChart()
   }, [])
 
+  useEffect(() => {
+    if (!isEditorsOpen || !chart?.editors) return
+    
+    fetchEditorsInfo(chart.editors)
+  }, [isEditorsOpen, chart?.editors])
+
   const handleCreate = async () => {
     if (!token) {
       toast({ title: "Lỗi", description: "Phiên đăng nhập hết hạn.", variant: "destructive" })
       return
     }
+    setIsLoading(true)
     try {
       await chartApi.createChart(token!, { name: formData.name, description: formData.description })
       toast({ title: "Thành công", description: "Đã tạo gia phả mới." })
       setIsCreateOpen(false)
-      fetchMyChart()
+      await fetchMyChart()
     } catch (error) {
       toast({ title: "Lỗi", description: "Không thể tạo gia phả.", variant: "destructive" })
+    } finally {
+      setIsLoading(false)
     }
   }
 
   const handleUpdate = async () => {
     if (!chart || !token) return
+    setIsLoading(true)
     try {
       await chartApi.updateChart(token!, chart._id, { 
         name: formData.name, 
@@ -111,26 +118,32 @@ export default function UserChartSection() {
       })
       toast({ title: "Thành công", description: "Đã cập nhật thông tin." })
       setIsEditOpen(false)
-      fetchMyChart()
+      await fetchMyChart()
     } catch (error) {
       toast({ title: "Lỗi", description: "Không thể cập nhật.", variant: "destructive" })
+    } finally {
+      setIsLoading(false)
     }
   }
 
   const handleDelete = async () => {
     if (!chart || !token || !confirm("Bạn có chắc chắn muốn xóa gia phả này? Hành động này không thể hoàn tác.")) return
+    setIsLoading(true)
     try {
       await chartApi.deleteChart(token!, chart._id)
       toast({ title: "Thành công", description: "Đã xóa gia phả." })
       setChart(null)
     } catch (error) {
       toast({ title: "Lỗi", description: "Không thể xóa gia phả.", variant: "destructive" })
+    } finally {
+      setIsLoading(false)
     }
   }
 
   const handleAddEditor = async () => {
     if (!chart || !token || !editorEmail) return
     setEditorError("")
+    setIsSavingEditor(true)
     try {
       await chartApi.addEditor(token!, chart._id, editorEmail)
       toast({ title: "Thành công", description: `Đã thêm ${editorEmail} làm người chỉnh sửa.` })
@@ -145,6 +158,8 @@ export default function UserChartSection() {
       }
       
       setEditorError(errorMessage)
+    } finally {
+      setIsSavingEditor(false)
     }
   }
 
@@ -314,13 +329,16 @@ export default function UserChartSection() {
                   <Input 
                     placeholder="Email người dùng..." 
                     value={editorEmail} 
+                    disabled={isSavingEditor}
                     onChange={(e) => {
                       setEditorEmail(e.target.value)
                       setEditorError("")
                     }} 
                     className={editorError ? "border-red-500" : ""}
                   />
-                  <Button onClick={handleAddEditor}>Thêm</Button>
+                  <Button type="button" onClick={handleAddEditor} disabled={isSavingEditor || !editorEmail.trim()}>
+                    {isSavingEditor ? "Đang thêm..." : "Thêm"}
+                  </Button>
                 </div>
                 {editorError && (
                   <p className="text-sm text-red-500 font-medium">{editorError}</p>
@@ -339,7 +357,7 @@ export default function UserChartSection() {
                         <span className="text-sm font-medium">{editor.fullName}</span>
                         <span className="text-xs text-muted-foreground">{editor.email}</span>
                       </div>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleRemoveEditor(editor.email)}>
+                      <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleRemoveEditor(editor.email)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>

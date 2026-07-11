@@ -70,6 +70,7 @@ export default function EventsPageContent({ chartId }: { chartId: string }) {
   const [viewing, setViewing] = useState<FamilyEvent | null>(null)
   const [editing, setEditing] = useState<FamilyEvent | null>(null)
   const [creating, setCreating] = useState(false)
+  const [saving, setSaving] = useState(false)
 
   // Fetch dữ liệu
 
@@ -187,6 +188,7 @@ export default function EventsPageContent({ chartId }: { chartId: string }) {
 
   /** Tạo sự kiện mới */
   const handleCreate = useCallback(async (form: EventForm) => {
+    setSaving(true)
     try {
       if (!token || !chartId) return
       await eventsApi.createEvent(token, chartId, form)
@@ -210,12 +212,15 @@ export default function EventsPageContent({ chartId }: { chartId: string }) {
         (Array.isArray(detail) ? detail.map((d: any) => d.msg).join("; ") : detail) ||
         "Lỗi kết nối hoặc dữ liệu không hợp lệ."
       toast({ variant: "destructive", title: "Tạo sự kiện thất bại", description: errorMessage })
+    } finally {
+      setSaving(false)
     }
   }, [token, chartId, upcomingDays, toast])
 
   /** Cập nhật sự kiện đang sửa */
   const handleUpdate = useCallback(async (form: EventForm) => {
     if (!editing) return
+    setSaving(true)
     try {
       if (!token || !chartId) return
       const updated = await eventsApi.updateEvent(token, chartId, editing.sourceId, form)
@@ -236,6 +241,8 @@ export default function EventsPageContent({ chartId }: { chartId: string }) {
         (Array.isArray(detail) ? detail.map((d: any) => d.msg).join("; ") : detail) ||
         "Không thể cập nhật thông tin sự kiện."
       toast({ variant: "destructive", title: "Cập nhật thất bại", description: errorMessage })
+    } finally {
+      setSaving(false)
     }
   }, [editing, token, chartId, upcomingDays, toast])
 
@@ -512,6 +519,7 @@ export default function EventsPageContent({ chartId }: { chartId: string }) {
       <EventEditorModal
         open={creating}
         ev={null}
+        saving={saving}
         onClose={() => setCreating(false)}
         onSave={handleCreate}
       />
@@ -520,6 +528,7 @@ export default function EventsPageContent({ chartId }: { chartId: string }) {
       <EventEditorModal
         open={!!editing}
         ev={editing}
+        saving={saving}
         onClose={() => setEditing(null)}
         onSave={handleUpdate}
       />
