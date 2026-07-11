@@ -22,7 +22,7 @@ export default function TreeSearchBox() {
 
   return (
     <div className="relative w-full sm:w-96">
-      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray" />
       <Input
         type="text"
         placeholder="Tìm kiếm để zoom đến người đó"

@@ -10,6 +10,7 @@ interface SidebarViewModeProps {
   setShowAddChildModal: (val: boolean) => void
   deleteRelationship: (type: "father" | "mother" | "spouse" | "child", related: RelatedPerson) => void
   isDeletingRel: string | null
+  onPersonClick?: (personId: number) => void
 }
 
 function calcAge(dob: string | null | undefined, dod: string | null | undefined): number | null {
@@ -48,6 +49,7 @@ export function SidebarViewMode({
   setShowAddChildModal,
   deleteRelationship,
   isDeletingRel,
+  onPersonClick,
 }: SidebarViewModeProps) {
   const age = calcAge(detail.dob, detail.dod)
 
@@ -66,7 +68,8 @@ export function SidebarViewMode({
     return (
       <div
         key={key}
-        className="flex items-center justify-between px-3.5 py-3 rounded-xl bg-white/60 dark:bg-black/40 backdrop-blur-md border border-white/50 dark:border-white/10 shadow-sm hover:shadow-md hover:-translate-y-0.5 hover:bg-white/90 dark:hover:bg-white/10 transition-all group"
+        className="flex items-center justify-between px-3.5 py-3 rounded-xl bg-white/60 dark:bg-black/40 backdrop-blur-md border border-white/50 dark:border-white/10 shadow-sm hover:shadow-md hover:-translate-y-0.5 hover:bg-white/90 dark:hover:bg-white/10 transition-all group cursor-pointer"
+        onClick={() => onPersonClick?.(rel.personId)}
       >
         <div className="flex items-center gap-3 min-w-0">
           <div className={`w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-full ${iconBg} shadow-sm font-bold text-lg`}>
@@ -80,7 +83,7 @@ export function SidebarViewMode({
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => deleteRelationship(type, rel)}
+          onClick={(e) => { e.stopPropagation(); deleteRelationship(type, rel); }}
           disabled={deleting}
           className="transition-all h-6 w-6 text-destructive hover:text-white hover:bg-destructive flex-shrink-0 shadow-sm"
           title="Xóa"

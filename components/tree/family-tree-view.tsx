@@ -36,7 +36,7 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
     selectPerson,
     openSidebar,
     closeSidebar,
-    confirmDiscardChanges,
+    isEditDirty,
     setFocusedPerson,
     toggleModal,
     reset,
@@ -77,12 +77,12 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
     (idStr: string) => {
       const person = people.find((p) => String(p.personId) === idStr)
       if (!person) return
-      if (!confirmDiscardChanges()) return
+      if (isEditDirty) return
       setFocusedPerson(null) // drop highlight when selecting a node
       selectPerson(person)
       openSidebar()
     },
-    [people, confirmDiscardChanges, setFocusedPerson, selectPerson, openSidebar],
+    [people, isEditDirty, setFocusedPerson, selectPerson, openSidebar],
   )
 
   // ── Close sidebar on outside click (guards portals / tree nodes) ──────
@@ -109,12 +109,12 @@ export default function FamilyTreeView({ chartId, readOnly = false }: FamilyTree
         target.closest("[data-radix-portal]") || target.closest('[data-slot*="content"][data-state="open"]')
       if (isPortalOpen || isInsidePortal) return
 
-      if (!confirmDiscardChanges()) return
+      if (isEditDirty) return
       closeSidebar()
     }
     document.addEventListener("pointerdown", handleClickOutside)
     return () => document.removeEventListener("pointerdown", handleClickOutside)
-  }, [sidebarOpen, closeSidebar, confirmDiscardChanges])
+  }, [sidebarOpen, closeSidebar, isEditDirty])
 
   // ── Fetch + handle ?focus=<id> (from the events page redirect) ────────
   const searchParams = useSearchParams()

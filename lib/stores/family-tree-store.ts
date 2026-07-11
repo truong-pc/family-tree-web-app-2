@@ -94,8 +94,6 @@ interface FamilyTreeState {
   openSidebar: () => void
   closeSidebar: () => void
   setEditDirty: (dirty: boolean) => void
-  /** Trả về true nếu được phép rời edit (không dirty, hoặc người dùng xác nhận bỏ thay đổi). */
-  confirmDiscardChanges: () => boolean
   toggleModal: (modal: ModalName, open: boolean) => void
   setFocusedPerson: (id: string | null) => void
   setLevelFilter: (value: string) => void
@@ -260,11 +258,6 @@ export const useFamilyTreeStore = create<FamilyTreeState>()((set, get) => ({
 
   setEditDirty: (dirty) => {
     set({ isEditDirty: dirty })
-  },
-
-  confirmDiscardChanges: () => {
-    if (!get().isEditDirty) return true
-    return window.confirm("Bạn có các thay đổi chưa được lưu. Thoát và bỏ qua các thay đổi này?")
   },
 
   toggleModal: (modal, open) => {

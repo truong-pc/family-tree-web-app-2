@@ -140,6 +140,8 @@ export function DatePicker({ date, setDate, disabled, placeholder = "DD/MM/YYYY"
             selected={calendarDate}
             onSelect={handleSelect}
             initialFocus
+            captionLayout="dropdown"
+            defaultMonth={calendarDate}
           />
         </PopoverContent>
       </Popover>

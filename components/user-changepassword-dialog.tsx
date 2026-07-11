@@ -74,7 +74,7 @@ export function UserChangePasswordDialog({ open, onOpenChange }: UserChangePassw
       setConfirmPassword("")
       
       // Hiển thị thông báo
-      alert(response.message || "Đổi mật khẩu thành công! Vui lòng đăng nhập lại.")
+      alert("Đổi mật khẩu thành công! Vui lòng đăng nhập lại.")
       
       // Logout và chuyển về trang login
       logout()

@@ -23,7 +23,7 @@ export default function PeopleList({ readOnly = false }: Props) {
     setLevelFilter,
     selectPerson,
     openSidebar,
-    confirmDiscardChanges,
+    isEditDirty,
     toggleModal,
   } = useFamilyTreeStore()
 
@@ -51,7 +51,7 @@ export default function PeopleList({ readOnly = false }: Props) {
   }, [filtered])
 
   const handleSelect = (person: Person) => {
-    if (!confirmDiscardChanges()) return
+    if (isEditDirty) return
     selectPerson(person)
     openSidebar()
   }
@@ -68,7 +68,7 @@ export default function PeopleList({ readOnly = false }: Props) {
         </h2>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <div className="relative w-full sm:w-56">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray" />
             <Input
               type="text"
               placeholder="Tìm theo tên"

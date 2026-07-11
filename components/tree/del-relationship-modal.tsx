@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
+import { useConfirm } from "@/hooks/use-confirm"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -30,6 +31,7 @@ type RelType = "FATHER" | "MOTHER" | "SPOUSE";
 
 export default function DelRelationshipModal({ chartId }: DelRelationshipModalProps) {
   const { showDelRelationshipModal: isOpen, toggleModal, fetchData } = useFamilyTreeStore()
+  const { confirm, ConfirmDialog } = useConfirm()
 
   const [relType, setRelType] = useState<RelType>("FATHER")
   const [id1, setId1] = useState<string>("")
@@ -52,9 +54,12 @@ export default function DelRelationshipModal({ chartId }: DelRelationshipModalPr
     }
 
     const typeName = relType === "FATHER" ? "cha-con" : relType === "MOTHER" ? "mẹ-con" : "vợ-chồng"
-    const confirmed = window.confirm(
-      `Bạn có chắc chắn muốn xóa mối quan hệ ${typeName} giữa ID ${id1} và ID ${id2}?`
-    )
+    const confirmed = await confirm({
+      title: "Xác nhận xóa quan hệ",
+      description: `Bạn có chắc chắn muốn xóa mối quan hệ ${typeName} giữa ID ${id1} và ID ${id2}?`,
+      confirmLabel: "Xóa",
+      variant: "destructive",
+    })
 
     if (!confirmed) return
 
@@ -109,6 +114,7 @@ export default function DelRelationshipModal({ chartId }: DelRelationshipModalPr
   }
 
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
@@ -181,5 +187,8 @@ export default function DelRelationshipModal({ chartId }: DelRelationshipModalPr
         </form>
       </DialogContent>
     </Dialog>
+
+    {ConfirmDialog}
+    </>
   )
 }

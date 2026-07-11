@@ -1,7 +1,5 @@
 import { apiClient } from "./client"
 
-// ── Types (camelCase, theo news-api.md) ────────────────────────────
-
 /** Bài đầy đủ — response của GET chi tiết / POST / PATCH */
 export interface NewsOut {
   postId: string
@@ -60,11 +58,11 @@ export interface NewsCreate {
 
 export type NewsUpdate = Partial<NewsCreate>
 
-// ── Công khai (no auth) ─────────────────────────────────────────────
+// Công khai (no auth)
 
 /**
  * Feed công khai, phân trang bằng cursor.
- * ⚠️ Dùng URLSearchParams để URL-encode cursor (dấu `+`/`|`/`:`),
+ * Dùng URLSearchParams để URL-encode cursor (dấu `+`/`|`/`:`),
  * tránh lỗi 400 Invalid cursor (xem news-api.md mục 2.3).
  */
 export const getNewsFeed = async (params: {
@@ -110,7 +108,7 @@ export const getNewsPost = async (postId: string): Promise<NewsOut> => {
   }
 }
 
-// ── Quản lý theo chart (auth) ───────────────────────────────────────
+// Quản lý theo chart (auth)
 
 /** Danh sách quản lý — tất cả bài của chart (cả nháp). Mảng phẳng, không phân trang. */
 export const getChartNews = async (

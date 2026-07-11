@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
 import { Trash2, Users, Edit, Plus, Eye, Share2, Calendar, Newspaper } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { useConfirm } from "@/hooks/use-confirm"
 import Link from "next/link"
 
 interface Chart {
@@ -36,6 +37,7 @@ export default function UserChartSection() {
   const [editorsInfo, setEditorsInfo] = useState<EditorInfo[]>([])
   const [isLoadingEditors, setIsLoadingEditors] = useState(false)
   const { toast } = useToast()
+  const { confirm, ConfirmDialog } = useConfirm()
 
   // States for forms
   const [isCreateOpen, setIsCreateOpen] = useState(false)
@@ -127,7 +129,14 @@ export default function UserChartSection() {
   }
 
   const handleDelete = async () => {
-    if (!chart || !token || !confirm("Bạn có chắc chắn muốn xóa gia phả này? Hành động này không thể hoàn tác.")) return
+    if (!chart || !token) return
+    const ok = await confirm({
+      title: "Xóa gia phả",
+      description: "Bạn có chắc chắn muốn xóa gia phả này? Hành động này không thể hoàn tác.",
+      confirmLabel: "Xóa",
+      variant: "destructive",
+    })
+    if (!ok) return
     setIsLoading(true)
     try {
       await chartApi.deleteChart(token!, chart._id)
@@ -226,6 +235,7 @@ export default function UserChartSection() {
 
   // --- VIEW: CHART MODAL (MANAGE MODE) ---
   return (
+    <>
     <Card
       className="relative overflow-hidden border border-white/40 shadow-md"
       style={{
@@ -376,5 +386,8 @@ export default function UserChartSection() {
         </div>
       </CardContent>
     </Card>
+
+    {ConfirmDialog}
+    </>
   )
 }

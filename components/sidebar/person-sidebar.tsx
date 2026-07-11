@@ -13,6 +13,8 @@ import { SidebarHeader } from "@/components/sidebar/sidebar-header"
 import { SidebarSkeleton } from "@/components/sidebar/sidebar-skeleton"
 import { SidebarEditMode } from "@/components/sidebar/sidebar-edit-mode"
 import { SidebarViewMode } from "@/components/sidebar/sidebar-view-mode"
+import { useConfirm } from "@/hooks/use-confirm"
+import { useToast } from "@/hooks/use-toast"
 
 interface Props {
   chartId: string
@@ -24,13 +26,19 @@ export default function PersonSidebar({ chartId }: Props) {
     sidebarOpen: isOpen,
     personDetail,
     personDetailLoading,
+    people,
     closeSidebar,
     fetchData,
     fetchPersonDetail,
     updatePersonLocally,
     setEditDirty,
-    confirmDiscardChanges,
+    isEditDirty,
+    selectPerson,
+    openSidebar,
   } = useFamilyTreeStore()
+
+  const { confirm, ConfirmDialog } = useConfirm()
+  const { toast } = useToast()
 
   const [showAddChildModal, setShowAddChildModal] = useState(false)
   const [showAddSpouseModal, setShowAddSpouseModal] = useState(false)
@@ -224,14 +232,28 @@ export default function PersonSidebar({ chartId }: Props) {
   }
 
   // ── close (X / có thể có thay đổi chưa lưu) ──────────────────────
-  const handleRequestClose = () => {
-    if (!confirmDiscardChanges()) return
+  const handleRequestClose = async () => {
+    if (isEditDirty) {
+      const ok = await confirm({
+        title: "Bỏ thay đổi?",
+        description: "Bạn có các thay đổi chưa được lưu. Thoát và bỏ qua các thay đổi này?",
+        confirmLabel: "Bỏ thay đổi",
+        variant: "destructive",
+      })
+      if (!ok) return
+    }
     closeSidebar()
   }
 
   // ── delete person ────────────────────────────────────────────────
   const deletePerson = async () => {
-    if (!confirm(`Bạn có chắc chắn muốn xóa ${person.name}? Thao tác này cũng sẽ xóa tất cả các mối quan hệ của họ.`)) return
+    const ok = await confirm({
+      title: "Xóa thành viên",
+      description: `Bạn có chắc chắn muốn xóa ${person.name}? Thao tác này cũng sẽ xóa tất cả các mối quan hệ của họ.`,
+      confirmLabel: "Xóa",
+      variant: "destructive",
+    })
+    if (!ok) return
 
     setIsDeleting(true)
     try {
@@ -243,7 +265,7 @@ export default function PersonSidebar({ chartId }: Props) {
       await fetchData(chartId, false)
       closeSidebar()
     } catch {
-      alert("Xóa thành viên thất bại. Vui lòng thử lại.")
+      toast({ variant: "destructive", title: "Lỗi", description: "Xóa thành viên thất bại. Vui lòng thử lại." })
     } finally {
       setIsDeleting(false)
     }
@@ -257,7 +279,13 @@ export default function PersonSidebar({ chartId }: Props) {
       spouse: "vợ/chồng",
       child: "con",
     }
-    if (!confirm(`Xóa quan hệ ${labels[type]} với ${related.name}?`)) return
+    const ok = await confirm({
+      title: "Xóa quan hệ",
+      description: `Xóa quan hệ ${labels[type]} với ${related.name}?`,
+      confirmLabel: "Xóa",
+      variant: "destructive",
+    })
+    if (!ok) return
 
     const key = `${type}-${related.personId}`
     setIsDeletingRel(key)
@@ -282,10 +310,27 @@ export default function PersonSidebar({ chartId }: Props) {
 
       await onDataUpdate()
     } catch {
-      alert("Xóa quan hệ thất bại. Vui lòng thử lại.")
+      toast({ variant: "destructive", title: "Lỗi", description: "Xóa quan hệ thất bại. Vui lòng thử lại." })
     } finally {
       setIsDeletingRel(null)
     }
+  }
+
+  // ── click vào người thân → navigate sidebar ──────────────────────
+  const handleRelPersonClick = async (personId: number) => {
+    if (isEditDirty) {
+      const ok = await confirm({
+        title: "Bỏ thay đổi?",
+        description: "Bạn có các thay đổi chưa được lưu. Thoát và bỏ qua các thay đổi này?",
+        confirmLabel: "Bỏ thay đổi",
+        variant: "destructive",
+      })
+      if (!ok) return
+    }
+    const target = people.find((p) => p.personId === personId)
+    if (!target) return
+    selectPerson(target)
+    openSidebar()
   }
 
   return (
@@ -327,6 +372,7 @@ export default function PersonSidebar({ chartId }: Props) {
               setShowAddChildModal={setShowAddChildModal}
               deleteRelationship={deleteRelationship}
               isDeletingRel={isDeletingRel}
+              onPersonClick={handleRelPersonClick}
             />
           )}
         </div>
@@ -357,6 +403,8 @@ export default function PersonSidebar({ chartId }: Props) {
           />
         </>
       )}
+
+      {ConfirmDialog}
     </>
   )
 }

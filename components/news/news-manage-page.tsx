@@ -4,7 +4,7 @@
  * news-manage-page.tsx
  * Khu quản lý tin tức theo gia phả (owner/editor).
  * - Liệt kê tất cả bài (cả nháp), tab lọc Tất cả/Của tôi/Công khai/Nội bộ, tìm kiếm.
- * - CRUD qua modal soạn bài + modal xem trước. Xóa dùng window.confirm.
+ * - CRUD qua modal soạn bài + modal xem trước. Xóa dùng AlertDialog.
  * - Quyền: owner sửa/xoá mọi bài; editor chỉ bài của mình (authorId === user.id).
  */
 
@@ -12,6 +12,7 @@ import { useState, useMemo, useEffect, useCallback } from "react"
 import { Plus, Search, Newspaper, AlertTriangle } from "lucide-react"
 import { useAuthStore } from "@/lib/stores/auth-store"
 import { useToast } from "@/hooks/use-toast"
+import { useConfirm } from "@/hooks/use-confirm"
 import * as newsApi from "@/lib/api/news"
 import { getMyChart } from "@/lib/api/chart"
 import type { NewsCardOut, NewsOut } from "@/lib/api/news"
@@ -25,6 +26,7 @@ type Tab = "all" | "mine" | "public" | "internal"
 export default function NewsManagePage({ chartId }: { chartId: string }) {
   const { token, user } = useAuthStore()
   const { toast } = useToast()
+  const { confirm, ConfirmDialog } = useConfirm()
 
   const [posts, setPosts] = useState<NewsCardOut[]>([])
   const [isOwner, setIsOwner] = useState(false)
@@ -137,7 +139,13 @@ export default function NewsManagePage({ chartId }: { chartId: string }) {
 
   const handleDelete = useCallback(async (post: NewsCardOut) => {
     if (!token || !chartId) return
-    if (!window.confirm(`Xóa bài "${post.title}"? Hành động này không thể hoàn tác.`)) return
+    const ok = await confirm({
+      title: "Xóa bài viết",
+      description: `Xóa bài "${post.title}"? Hành động này không thể hoàn tác.`,
+      confirmLabel: "Xóa",
+      variant: "destructive",
+    })
+    if (!ok) return
     try {
       await newsApi.deleteNews(token, chartId, post.postId)
       setPosts((prev) => prev.filter((p) => p.postId !== post.postId))
@@ -161,6 +169,7 @@ export default function NewsManagePage({ chartId }: { chartId: string }) {
   }, [token, chartId, toast])
 
   return (
+    <>
     <div
       className="relative min-h-screen"
       style={{
@@ -285,5 +294,8 @@ export default function NewsManagePage({ chartId }: { chartId: string }) {
         onDelete={() => { if (viewing) handleDelete(viewing) }}
       />
     </div>
+
+    {ConfirmDialog}
+    </>
   )
 }

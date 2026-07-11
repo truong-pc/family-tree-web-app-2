@@ -5,15 +5,15 @@
  * Trang chính hiển thị danh sách sự kiện gia phả.
  * - Fetch dữ liệu lịch hôm nay + danh sách sự kiện + upcoming events
  * - Filter, sort, tìm kiếm sự kiện
- * - Quản lý CRUD: tạo, sửa, xóa (confirm), xem chi tiết
+ * - Quản lý CRUD: tạo, sửa, xóa (AlertDialog), xem chi tiết
  * - Toast thông báo qua shadcn useToast (thay vì custom toast)
- * - Xóa dùng window.confirm()
  */
 
 import { useState, useMemo, useEffect, useCallback, useRef } from "react"
 import { LayoutGrid, List, Loader2, Plus, Search, TriangleAlert } from "lucide-react"
 import { useAuthStore } from "@/lib/stores/auth-store"
 import { useToast } from "@/hooks/use-toast"
+import { useConfirm } from "@/hooks/use-confirm"
 import * as eventsApi from "@/lib/api/events"
 import type { FamilyEvent, UpcomingEvent, CalendarToday } from "@/lib/api/events"
 
@@ -46,6 +46,7 @@ const eventKey = (ev: FamilyEvent | UpcomingEvent) =>
 export default function EventsPageContent({ chartId }: { chartId: string }) {
   const { token } = useAuthStore()
   const { toast } = useToast()
+  const { confirm, ConfirmDialog } = useConfirm()
 
   // State
   const [calendarData, setCalendarData] = useState<CalendarToday | null>(null)
@@ -246,9 +247,14 @@ export default function EventsPageContent({ chartId }: { chartId: string }) {
     }
   }, [editing, token, chartId, upcomingDays, toast])
 
-  /** Xóa sự kiện — dùng window.confirm() thay vì DeleteModal */
+  /** Xóa sự kiện — dùng AlertDialog */
   const handleDelete = useCallback(async (ev: FamilyEvent) => {
-    const confirmed = window.confirm(`Bạn có chắc muốn xóa sự kiện "${ev.title}"? Hành động này không thể hoàn tác.`)
+    const confirmed = await confirm({
+      title: "Xóa sự kiện",
+      description: `Bạn có chắc muốn xóa sự kiện "${ev.title}"? Hành động này không thể hoàn tác.`,
+      confirmLabel: "Xóa",
+      variant: "destructive",
+    })
     if (!confirmed) return
 
     try {
@@ -279,6 +285,7 @@ export default function EventsPageContent({ chartId }: { chartId: string }) {
 
   // Render 
   return (
+    <>
     <div className="relative min-h-screen pb-16 overflow-x-hidden" 
       style={{ 
         background:
@@ -533,5 +540,8 @@ export default function EventsPageContent({ chartId }: { chartId: string }) {
         onSave={handleUpdate}
       />
     </div>
+
+    {ConfirmDialog}
+    </>
   )
 }
