@@ -15,12 +15,12 @@ import type { FamilyEvent } from "@/lib/api/events"
 export const TYPE_META = {
   birthday: {
     label: "Sinh nhật",
-    bgClass: "bg-blue-50",
-    textClass: "text-blue-700",
-    borderClass: "border-blue-100",
-    iconBg: "bg-blue-100",
-    iconText: "text-blue-700",
-    gradientFrom: "#dbeafe",
+    bgClass: "bg-teal-50",
+    textClass: "text-teal-700",
+    borderClass: "border-teal-100",
+    iconBg: "bg-teal-100",
+    iconText: "text-teal-700",
+    gradientFrom: "#f8fedbff",
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M20 21H4v-7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z" />

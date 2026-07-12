@@ -213,7 +213,7 @@ export default function NewsEditorModal({
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o && !saving) onClose() }}>
       <DialogContent
-        className="overflow-hidden p-0 rounded-3xl max-w-[1400px] w-[80vw] border border-white/60 sm:!max-w-[1400px]"
+        className="overflow-hidden p-0 rounded-3xl max-w-[1400px] sm:w-[80vw] border border-white/60 sm:!max-w-[1400px]"
         showCloseButton={false}
         style={{ background: "rgba(255,255,255,0.92)", backdropFilter: "blur(14px)" }}
         onPointerDownOutside={(e) => { if (isHugeRTETarget(e.target)) e.preventDefault() }}
