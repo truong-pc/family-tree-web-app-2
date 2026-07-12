@@ -18,7 +18,7 @@ export default function PublicNavbar() {
           className="flex items-center gap-3 text-2xl font-bold text-primary hover:opacity-80 transition"
         >
           <img src="/icon.png" alt="Logo" className="w-10 h-10 object-contain" />
-          <span className="hidden sm:inline">Hệ Thống Quản Lý </span>Gia Phả
+          <span className="hidden sm:inline">Hệ Thống Quản Lý Gia Phả</span>
         </Link>
         <div className="flex gap-2 sm:gap-4 items-center">
           <Link href="/news" className="px-3 py-2 rounded-md text-foreground hover:text-primary transition font-medium">

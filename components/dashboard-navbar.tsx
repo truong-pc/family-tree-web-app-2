@@ -54,7 +54,7 @@ export default function DashboardNavbar() {
           {/* Logo and Brand */}
           <Link href="/dashboard" className="flex items-center gap-2 hover:opacity-80 transition">
             <img src="/icon.png" alt="Logo" className="w-10 h-10 object-contain" />
-            <span className="font-bold text-2xl text-primary">Gia Phả</span>
+            <span className="font-bold text-2xl text-primary hidden sm:inline">Gia Phả</span>
           </Link>
 
           {/* Navigation Links */}
